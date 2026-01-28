@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Javeroin Realtime</title>
+    <title>Javeroin Business POS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     
@@ -11,113 +11,106 @@
 
     <style>
         :root { 
-            --primary: #06b6d4; 
-            --primary-dark: #0891b2; 
-            --bg: #f3f4f6; 
-            --text-main: #1f2937; 
-            --text-muted: #6b7280; 
+            --primary: #06b6d4; --primary-dark: #0891b2; --bg: #f3f4f6; 
+            --text-main: #1f2937; --text-muted: #6b7280; --success: #10b981;
+            --danger: #ef4444;
         }
-
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            padding-bottom: 40px; 
-            color: var(--text-main);
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; color: var(--text-main); }
 
         .app-header { 
             background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
-            color: white; 
-            padding: 25px 20px 50px 20px; 
-            border-bottom-left-radius: 20px; 
-            border-bottom-right-radius: 20px; 
-            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25); 
-            text-align: center; 
+            color: white; padding: 20px; text-align: center; 
+            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
         }
-        .app-title { font-size: 20px; font-weight: 800; margin: 0; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 90%; max-width: 400px; margin: -25px auto 20px auto; }
+        .stat-card { background: white; border-radius: 12px; padding: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; transition: all 0.3s ease; }
+        .stat-label { font-size: 9px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
+        .stat-val { font-size: 18px; font-weight: 800; margin-top: 4px; }
 
-        .stats-card { 
-            background: white; 
-            width: 90%; 
-            max-width: 400px; 
-            margin: -35px auto 20px auto; 
-            border-radius: 12px; 
-            padding: 20px; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
-            text-align: center; 
-        }
-        .stats-number { font-size: 36px; font-weight: 800; color: var(--primary-dark); margin: 5px 0; }
-        
-        /* Search Box Style */
-        .search-container {
-            width: 90%;
-            max-width: 400px;
-            margin: 0 auto 15px auto;
-        }
-        .search-input {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            font-family: inherit;
-            outline: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
+        /* --- Stock Alert Style --- */
+        .stock-alert { background: #fee2e2 !important; border: 2px solid var(--danger); animation: pulse 2s infinite; }
+        .stock-alert .stat-val { color: var(--danger); }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        #localList { width: 90%; max-width: 400px; margin: 0 auto; }
-        
-        .voucher-card { 
-            background: white; 
-            border-radius: 12px; 
-            margin-bottom: 12px; 
-            display: flex; 
-            overflow: hidden; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-            transition: all 0.3s ease; 
-        }
-        
+        .search-container { width: 90%; max-width: 400px; margin: 0 auto 15px auto; }
+        .search-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-size: 14px; }
+
+        .list-container { width: 90%; max-width: 400px; margin: 0 auto; }
+        .voucher-card { background: white; border-radius: 12px; margin-bottom: 10px; display: flex; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .color-strip { width: 6px; flex-shrink: 0; }
-        .card-content { flex-grow: 1; padding: 15px; }
-        .voucher-code { font-family: 'Roboto Mono', monospace; font-size: 20px; font-weight: 700; letter-spacing: 1px; }
-        .voucher-details { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 6px; }
-        .price-badge { background: #ecfdf5; color: #047857; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-        
-        .print-section { width: 70px; border-left: 2px dashed #e5e7eb; background: #f9fafb; display: flex; align-items: center; justify-content: center; }
-        .btn-print-icon { background: none; border: none; width: 100%; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        .print-icon-img { width: 32px; height: 32px; object-fit: contain; }
+        .card-content { flex-grow: 1; padding: 12px; }
+        .voucher-code { font-family: 'Roboto Mono', monospace; font-size: 17px; font-weight: 700; }
+        .price-badge { background: #ecfdf5; color: #047857; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .sold-time { font-size: 10px; color: var(--primary-dark); font-weight: 700; margin-top: 4px; }
 
-        .is-printed { 
-            opacity: 0.5; 
-            background: #f1f5f9; 
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
+            background: white; display: flex; justify-content: space-around;
+            align-items: center; border-top: 1px solid #e5e7eb; z-index: 1000;
         }
-        .is-printed .voucher-code { text-decoration: line-through; color: #9ca3af; }
-        .status-printed { font-size: 10px; background: #94a3b8; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
-        
-        .loading-spinner { text-align:center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+        .nav-item { border: none; background: none; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .nav-item.active { color: var(--primary-dark); }
+        .nav-icon { font-size: 20px; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .btn-report { 
+            width: 100%; padding: 15px; background: var(--success); color: white; 
+            border: none; border-radius: 10px; font-weight: 800; margin-top: 20px; cursor: pointer;
+        }
+
+        .is-printed { opacity: 0.6; background: #f8fafc; }
     </style>
 </head>
 <body>
 
 <div class="app-header">
-    <h1 class="app-title">Javeroin Seller</h1>
+    <h1 style="font-size: 18px; margin: 0;">Javeroin Seller</h1>
+    <div id="headerDate" style="font-size: 11px; opacity: 0.8; font-weight: 600;">...</div>
 </div>
 
-<div class="stats-card">
-    <div style="font-size:12px; color:#6b7280; font-weight:600; letter-spacing: 1px;">AVAILABLE STOCK</div>
-    <div class="stats-number" id="vCount">...</div>
+<div id="pageStore" class="page active">
+    <div class="stats-grid">
+        <div class="stat-card" id="stockCard">
+            <div class="stat-label">In Stock</div>
+            <div class="stat-val" id="stockCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Sold</div>
+            <div class="stat-val" id="todaySales" style="color:var(--success)">0</div>
+        </div>
+    </div>
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" onkeyup="filterList('storeList', this.value)" placeholder="Find available code...">
+    </div>
+    <div id="storeList" class="list-container"></div>
 </div>
 
-<div class="search-container">
-    <input type="text" id="searchInput" class="search-input" onkeyup="filterVouchers()" placeholder="Search code...">
+<div id="pageHistory" class="page">
+    <div style="padding: 20px; text-align: center;">
+        <h2 style="margin: 0; font-size: 16px;">Sales History</h2>
+        <p style="font-size: 12px; color: var(--text-muted);">All printed vouchers</p>
+    </div>
+    <div class="search-container">
+        <input type="text" class="search-input" onkeyup="filterList('historyList', this.value)" placeholder="Find a sold code...">
+    </div>
+    <div id="historyList" class="list-container"></div>
+    <div class="list-container">
+        <button class="btn-report" onclick="downloadReport()">📩 Export CSV Report</button>
+    </div>
 </div>
 
-<div id="localList">
-    <div class="loading-spinner">Connecting to Database...</div>
-</div>
+<nav class="nav-bar">
+    <button class="nav-item active" onclick="showPage('pageStore', this)">
+        <span class="nav-icon">🏪</span><span>Store</span>
+    </button>
+    <button class="nav-item" onclick="showPage('pageHistory', this)">
+        <span class="nav-icon">📜</span><span>History</span>
+    </button>
+</nav>
 
 <script>
     const firebaseConfig = {
@@ -135,116 +128,119 @@
     const db = firebase.database();
     const vouchersRef = db.ref('/'); 
 
+    let masterData = [];
+
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('headerDate').innerText = today;
+
     vouchersRef.on('value', (snapshot) => {
         const data = snapshot.val();
-        renderList(data);
+        if (!data) return;
+        masterData = Array.isArray(data) ? data : Object.entries(data).map(([k, v]) => ({...v, firebaseKey: k}));
+        renderAll();
     });
 
-    function renderList(data) {
-        const listDiv = document.getElementById('localList');
-        const countDiv = document.getElementById('vCount');
-        
-        if (!data) {
-            listDiv.innerHTML = "<div class='loading-spinner'>No data found.</div>";
-            countDiv.innerText = "0";
-            return;
-        }
+    function renderAll() {
+        const storeDiv = document.getElementById('storeList');
+        const historyDiv = document.getElementById('historyList');
+        const stockCard = document.getElementById('stockCard');
+        let stock = 0, sales = 0;
 
-        let vouchers = [];
-        let keys = []; 
-        
-        if (Array.isArray(data)) {
-            vouchers = data;
-            keys = data.map((_, i) => i);
-        } else {
-            vouchers = Object.values(data);
-            keys = Object.keys(data);
-        }
+        storeDiv.innerHTML = "";
+        historyDiv.innerHTML = "";
 
-        const availableCount = vouchers.filter(v => v && v.code && !v.printed).length;
-        countDiv.innerText = availableCount;
-
-        listDiv.innerHTML = ""; 
-
-        vouchers.forEach((v, index) => {
-            if (!v || !v.code) return; 
-
-            const isPrinted = v.printed === true || v.printed === "true";
-            const originalKey = keys[index];
-
-            let color = "#cbd5e1"; 
-            if (v.plan && v.plan.includes("4 Hours")) color = "#f59e0b"; 
-            if (v.plan && v.plan.includes("1 Day"))   color = "#06b6d4"; 
-            if (v.plan && v.plan.includes("1 Week"))  color = "#10b981"; 
-            if (v.plan && v.plan.includes("1 Month")) color = "#ef4444"; 
-
-            const price = v.amount ? parseInt(v.amount).toLocaleString() : '0';
-            const printedBadge = isPrinted ? `<span class="status-printed">SOLD</span>` : '';
-
-            // --- FIXED: RELATIVE PATH ---
-            const btnContent = `<img src="invoice.png" class="print-icon-img" onerror="this.outerHTML='🖨️'" alt="Print">`;
-
-            const clickAction = `onclick="printAndSync('${originalKey}', '${v.code}', '${v.plan}', '${v.amount}', ${isPrinted})"`;
-
-            listDiv.innerHTML += `
-                <div class="voucher-card ${isPrinted ? 'is-printed' : ''}">
-                    <div class="color-strip" style="background: ${color}"></div>
+        masterData.forEach((v, index) => {
+            if (!v || !v.code) return;
+            const isSold = v.printed === true || v.printed === "true";
+            const fKey = v.firebaseKey !== undefined ? v.firebaseKey : index;
+            
+            const cardHtml = `
+                <div class="voucher-card ${isSold ? 'is-printed' : ''}">
+                    <div class="color-strip" style="background: ${getPlanColor(v.plan)}"></div>
                     <div class="card-content">
                         <div class="voucher-code">${v.code}</div>
                         <div class="voucher-details">
-                            <span>${v.plan}</span>
-                            <span class="price-badge">${price} UGX</span>
+                            <span>${v.plan}</span><span class="price-badge">${parseInt(v.amount).toLocaleString()} UGX</span>
                         </div>
-                        <div style="margin-top:5px;">${printedBadge}</div>
+                        ${v.soldAt ? `<div class="sold-time">Sold: ${v.soldAt}</div>` : ''}
                     </div>
-                    <div class="print-section">
-                        <button class="btn-print-icon" ${clickAction}>
-                            ${btnContent}
+                    <div style="width: 60px; display:flex; align-items:center; justify-content:center; border-left: 1px dashed #eee;">
+                        <button style="background:none; border:none; cursor:pointer;" onclick="handlePrint('${fKey}', '${v.code}', '${v.plan}', '${v.amount}', ${isSold}, '${v.soldAt || ""}')">
+                            <img src="invoice.png" style="width:28px;" onerror="this.outerHTML='🖨️'">
                         </button>
                     </div>
                 </div>`;
+
+            if (isSold) {
+                historyDiv.innerHTML += cardHtml;
+                sales += parseInt(v.amount || 0);
+            } else {
+                storeDiv.innerHTML += cardHtml;
+                stock++;
+            }
         });
+
+        // --- STOCK ALERT LOGIC ---
+        document.getElementById('stockCount').innerText = stock;
+        if (stock < 10 && stock > 0) {
+            stockCard.classList.add('stock-alert');
+        } else {
+            stockCard.classList.remove('stock-alert');
+        }
+
+        document.getElementById('todaySales').innerText = sales.toLocaleString() + " /=";
     }
 
-    // --- SEARCH LOGIC ---
-    function filterVouchers() {
-        const input = document.getElementById('searchInput').value.toUpperCase();
-        const cards = document.getElementsByClassName('voucher-card');
+    function getPlanColor(plan) {
+        if (plan?.includes("4 Hours")) return "#f59e0b";
+        if (plan?.includes("1 Day")) return "#06b6d4";
+        if (plan?.includes("1 Week")) return "#10b981";
+        if (plan?.includes("1 Month")) return "#ef4444";
+        return "#cbd5e1";
+    }
 
-        for (let i = 0; i < cards.length; i++) {
-            const code = cards[i].querySelector('.voucher-code').innerText;
-            if (code.toUpperCase().indexOf(input) > -1) {
-                cards[i].style.display = "";
-            } else {
-                cards[i].style.display = "none";
-            }
+    function showPage(pageId, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function filterList(listId, val) {
+        const search = val.toUpperCase();
+        const cards = document.getElementById(listId).getElementsByClassName('voucher-card');
+        for (let card of cards) {
+            const code = card.querySelector('.voucher-code').innerText;
+            card.style.display = code.includes(search) ? "" : "none";
         }
     }
 
-    function printAndSync(key, code, plan, amount, alreadySold) {
-        const msg = alreadySold ? `Re-print SOLD ${plan} voucher?` : `Print ${plan} voucher?`;
-        if(!confirm(msg)) return;
+    function handlePrint(key, code, plan, amount, isSold, time) {
+        const confirmMsg = isSold ? `RE-PRINT Sold ${plan} voucher?` : `Sell ${plan} voucher?`;
+        if (!confirm(confirmMsg)) return;
 
-        const price = amount ? parseInt(amount).toLocaleString() : '0';
-        const printData = 
-            "\x1ba\x01" + "JAVEROIN WIFI\n" + 
-            "--------------------------------\n" +
-            (alreadySold ? "RE-PRINT VOUCHER\n" : "INTERNET VOUCHER\n") + 
-            "--------------------------------\n" +
-            "\x1ba\x00" + 
-            "PLAN  : " + plan + "\n" +
-            "PRICE : " + price + " UGX\n\n" +
-            "VOUCHER:\n" +
-            "\x1b!\x38" + code + "\n" + 
-            "\x1b!\x00" + "\n" +
-            "--------------------------------\n" +
-            "\x1ba\x01" + "Connect to: Javeroin Unlimited\n\n\n";
+        let soldTime = time;
+        if (!isSold) {
+            const now = new Date();
+            soldTime = now.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}) + ", " + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+        }
 
+        const printData = `\x1ba\x01JAVEROIN WIFI\n--------------------------------\n${isSold ? "DUPLICATE RECEIPT" : "OFFICIAL VOUCHER"}\n--------------------------------\n\x1ba\x00PLAN  : ${plan}\nPRICE : ${parseInt(amount).toLocaleString()} UGX\nTIME  : ${soldTime}\n\nVOUCHER CODE:\n\x1b!\x38${code}\n\x1b!\x00\n--------------------------------\n\x1ba\x01Powered by Javeroin Systems\n\n\n`;
         window.location.href = "rawbt:base64," + btoa(printData);
 
-        if (!alreadySold) {
-            db.ref('/' + key).update({ printed: true });
-        }
+        if (!isSold) db.ref('/' + key).update({ printed: true, soldAt: soldTime });
+    }
+
+    function downloadReport() {
+        const sold = masterData.filter(v => v.printed === true || v.printed === "true");
+        let csv = "Code,Plan,Amount,Sold At\n";
+        sold.forEach(v => { csv += `${v.code},${v.plan},${v.amount},${v.soldAt}\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Javeroin_Sales_${new Date().toLocaleDateString()}.csv`;
+        a.click();
     }
 </script>
 </body>
