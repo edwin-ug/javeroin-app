@@ -51,6 +51,22 @@
         }
         .stats-number { font-size: 36px; font-weight: 800; color: var(--primary-dark); margin: 5px 0; }
         
+        /* Search Box Style */
+        .search-container {
+            width: 90%;
+            max-width: 400px;
+            margin: 0 auto 15px auto;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+            outline: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
         #localList { width: 90%; max-width: 400px; margin: 0 auto; }
         
         .voucher-card { 
@@ -74,9 +90,8 @@
         
         .print-icon-img { width: 32px; height: 32px; object-fit: contain; }
 
-        /* --- STATES --- */
         .is-printed { 
-            opacity: 0.5; /* Keeping it greyed out for visual tracking */
+            opacity: 0.5; 
             background: #f1f5f9; 
         }
         .is-printed .voucher-code { text-decoration: line-through; color: #9ca3af; }
@@ -89,12 +104,15 @@
 
 <div class="app-header">
     <h1 class="app-title">Javeroin Seller</h1>
-    <div class="app-version">v4.2 (Re-printable)</div>
 </div>
 
 <div class="stats-card">
     <div style="font-size:12px; color:#6b7280; font-weight:600; letter-spacing: 1px;">AVAILABLE STOCK</div>
     <div class="stats-number" id="vCount">...</div>
+</div>
+
+<div class="search-container">
+    <input type="text" id="searchInput" class="search-input" onkeyup="filterVouchers()" placeholder="Search code...">
 </div>
 
 <div id="localList">
@@ -163,10 +181,9 @@
             const price = v.amount ? parseInt(v.amount).toLocaleString() : '0';
             const printedBadge = isPrinted ? `<span class="status-printed">SOLD</span>` : '';
 
-            // We keep the icon the same regardless of printed status
-            const btnContent = `<img src="https://raw.githubusercontent.com/edwin-ug/javeroin-app/main/invoice.png" class="print-icon-img" alt="Print">`;
+            // --- FIXED: RELATIVE PATH ---
+            const btnContent = `<img src="invoice.png" class="print-icon-img" onerror="this.outerHTML='🖨️'" alt="Print">`;
 
-            // We keep the clickAction active for both SOLD and AVAILABLE items
             const clickAction = `onclick="printAndSync('${originalKey}', '${v.code}', '${v.plan}', '${v.amount}', ${isPrinted})"`;
 
             listDiv.innerHTML += `
@@ -189,8 +206,22 @@
         });
     }
 
+    // --- SEARCH LOGIC ---
+    function filterVouchers() {
+        const input = document.getElementById('searchInput').value.toUpperCase();
+        const cards = document.getElementsByClassName('voucher-card');
+
+        for (let i = 0; i < cards.length; i++) {
+            const code = cards[i].querySelector('.voucher-code').innerText;
+            if (code.toUpperCase().indexOf(input) > -1) {
+                cards[i].style.display = "";
+            } else {
+                cards[i].style.display = "none";
+            }
+        }
+    }
+
     function printAndSync(key, code, plan, amount, alreadySold) {
-        // Different message if it was already sold
         const msg = alreadySold ? `Re-print SOLD ${plan} voucher?` : `Print ${plan} voucher?`;
         if(!confirm(msg)) return;
 
@@ -198,7 +229,7 @@
         const printData = 
             "\x1ba\x01" + "JAVEROIN WIFI\n" + 
             "--------------------------------\n" +
-            "RE-PRINT VOUCHER\n" + // Changed title for transparency
+            (alreadySold ? "RE-PRINT VOUCHER\n" : "INTERNET VOUCHER\n") + 
             "--------------------------------\n" +
             "\x1ba\x00" + 
             "PLAN  : " + plan + "\n" +
@@ -211,7 +242,6 @@
 
         window.location.href = "rawbt:base64," + btoa(printData);
 
-        // We only need to tell Firebase it's printed if it wasn't already
         if (!alreadySold) {
             db.ref('/' + key).update({ printed: true });
         }
