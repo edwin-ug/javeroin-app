@@ -1,0 +1,102 @@
+<body>
+
+<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:20px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        <h2 style="margin:0 0 20px 0; color:var(--text-main);">🔐 Security</h2>
+        <input type="password" id="pinInput" placeholder="Enter PIN" style="font-size:24px; padding:10px; width:150px; text-align:center; letter-spacing:5px; border:2px solid #e5e7eb; border-radius:10px; outline:none;">
+        <br><br>
+        <button onclick="checkPin()" style="background:var(--primary-dark); color:white; border:none; padding:12px 30px; border-radius:10px; font-weight:bold; font-size:16px;">UNLOCK</button>
+        <p id="errorMsg" style="color:red; font-size:12px; margin-top:10px; display:none;">Incorrect PIN</p>
+    </div>
+</div>
+
+<div class="app-header">
+    <h1 class="app-title">Javeroin Seller</h1>
+    <div class="app-version">v3.3 (Secure Cloud)</div>
+</div>
+
+<div class="stats-card">
+    <div class="stats-label">Vouchers Available</div>
+    <div class="stats-number" id="vCount">0</div>
+</div>
+
+<div class="actions-grid">
+    <button class="btn btn-sync" onclick="syncVouchers()">
+        <span>☁️</span> Sync Cloud
+    </button>
+    <button class="btn btn-clear" onclick="clearAllVouchers()">
+        <span>🗑️</span>
+    </button>
+</div>
+
+<div id="localList"></div>
+
+<script>
+    // --- SECURITY LOGIC ---
+    function checkPin() {
+        const pin = document.getElementById('pinInput').value;
+        // CHANGE '2580' TO YOUR PREFERRED PIN CODE
+        if(pin === "2580") {
+            document.getElementById('loginOverlay').style.display = 'none';
+        } else {
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    }
+
+    // --- YOUR APP LOGIC ---
+    // (Paste your syncVouchers, updateDisplay, and other functions here)
+    // Make sure syncVouchers() has your GIST LINK!
+    
+    function updateDisplay() {
+        const listDiv = document.getElementById('localList');
+        const countDiv = document.getElementById('vCount');
+        let vouchers = JSON.parse(localStorage.getItem('stored_vouchers')) || [];
+        
+        countDiv.innerText = vouchers.length;
+        listDiv.innerHTML = "";
+
+        if (vouchers.length === 0) {
+            listDiv.innerHTML = `
+                <div class="empty-state">
+                    <span class="empty-icon">📦</span>
+                    <p>No vouchers.</p>
+                </div>`;
+            return;
+        }
+
+        vouchers.forEach((v, index) => {
+            let color = "#cbd5e1"; 
+            if (v.plan && v.plan.includes("4 Hours")) color = "#f59e0b"; 
+            if (v.plan && v.plan.includes("1 Day"))   color = "#06b6d4"; 
+            if (v.plan && v.plan.includes("1 Week"))  color = "#10b981"; 
+            if (v.plan && v.plan.includes("1 Month")) color = "#ef4444"; 
+
+            const price = v.amount ? parseInt(v.amount).toLocaleString() : '0';
+            const printedBadge = v.printed ? `<span class="status-printed">✓ PRINTED</span>` : '';
+
+            listDiv.innerHTML += `
+                <div class="voucher-card ${v.printed ? 'is-printed' : ''}">
+                    <div class="color-strip" style="background: ${color}"></div>
+                    <div class="card-content">
+                        <div class="voucher-code">${v.code}</div>
+                        <div class="voucher-details">
+                            <span>${v.plan}</span>
+                            <span class="price-badge">${price} UGX</span>
+                        </div>
+                        <div style="margin-top:5px;">${printedBadge}</div>
+                    </div>
+                    <div class="print-section">
+                        <button class="btn-print-icon" onclick="printLocalVoucher(${index})">
+                            ${v.printed ? '🔄' : '🖨️'}
+                        </button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // Don't forget to include the Sync, Print, and Clear functions too!
+    
+    // Init
+    updateDisplay();
+</script>
+</body>
