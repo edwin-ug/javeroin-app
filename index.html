@@ -1,3 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Javeroin Seller Secure</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #06b6d4;      
+            --primary-dark: #0891b2; 
+            --bg: #f3f4f6;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding-bottom: 40px; 
+            color: var(--text-main);
+        }
+
+        /* --- HEADER & STATS --- */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 25px 20px 50px 20px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25);
+            text-align: center;
+        }
+        .app-title { font-size: 20px; font-weight: 800; margin: 0; }
+        .app-version { font-size: 11px; opacity: 0.8; margin-top: 4px; }
+
+        .stats-card {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            margin: -35px auto 20px auto;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .stats-number { font-size: 36px; font-weight: 800; color: var(--primary-dark); margin: 5px 0; }
+        
+        /* --- BUTTONS --- */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 10px;
+            width: 90%;
+            max-width: 400px;
+            margin: 0 auto 20px auto;
+        }
+        .btn {
+            border: none; padding: 15px; border-radius: 10px; font-weight: 600; font-size: 14px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-sync { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .btn-clear { background: #fee2e2; color: #ef4444; }
+
+        /* --- LIST --- */
+        #localList { width: 90%; max-width: 400px; margin: 0 auto; }
+        .voucher-card {
+            background: white; border-radius: 12px; margin-bottom: 12px;
+            display: flex; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .color-strip { width: 6px; flex-shrink: 0; }
+        .card-content { flex-grow: 1; padding: 15px; }
+        .voucher-code { font-family: 'Roboto Mono', monospace; font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+        .voucher-details { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 6px; }
+        .price-badge { background: #ecfdf5; color: #047857; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+        
+        .print-section { width: 70px; border-left: 2px dashed #e5e7eb; background: #f9fafb; display: flex; align-items: center; justify-content: center; }
+        .btn-print-icon { background: none; border: none; font-size: 24px; width: 100%; height: 100%; }
+
+        .is-printed { opacity: 0.6; background: #f3f4f6; }
+        .is-printed .voucher-code { text-decoration: line-through; color: #9ca3af; }
+        .status-printed { font-size: 10px; background: #cffafe; color: #0e7490; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+    </style>
+</head>
 <body>
 
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
@@ -12,11 +100,11 @@
 
 <div class="app-header">
     <h1 class="app-title">Javeroin Seller</h1>
-    <div class="app-version">v3.3 (Secure Cloud)</div>
+    <div class="app-version">v3.4 (Secure Cloud)</div>
 </div>
 
 <div class="stats-card">
-    <div class="stats-label">Vouchers Available</div>
+    <div style="font-size:12px; color:#6b7280; font-weight:600;">VOUCHERS AVAILABLE</div>
     <div class="stats-number" id="vCount">0</div>
 </div>
 
@@ -35,18 +123,61 @@
     // --- SECURITY LOGIC ---
     function checkPin() {
         const pin = document.getElementById('pinInput').value;
-        // CHANGE '2580' TO YOUR PREFERRED PIN CODE
-        if(pin === "2580") {
+        if(pin === "2580") { // CHANGE THIS PIN IF YOU WANT
             document.getElementById('loginOverlay').style.display = 'none';
         } else {
             document.getElementById('errorMsg').style.display = 'block';
         }
     }
 
-    // --- YOUR APP LOGIC ---
-    // (Paste your syncVouchers, updateDisplay, and other functions here)
-    // Make sure syncVouchers() has your GIST LINK!
-    
+    // --- SYNC LOGIC ---
+    function syncVouchers() {
+        const btn = document.querySelector('.btn-sync');
+        btn.innerHTML = "<span>☁️</span> Connecting...";
+        btn.style.opacity = "0.7";
+
+        // *** PASTE YOUR GIST URL HERE ***
+        const serverUrl = 'PASTE_YOUR_RAW_GIST_LINK_HERE';
+        
+        const freshUrl = serverUrl + '?t=' + new Date().getTime();
+
+        fetch(freshUrl)
+        .then(res => {
+            if(!res.ok) throw new Error("Link broken");
+            return res.json();
+        })
+        .then(newData => {
+            let existingVouchers = JSON.parse(localStorage.getItem('stored_vouchers')) || [];
+            let existingCodes = existingVouchers.map(v => v.code);
+            let addedCount = 0;
+            
+            newData.forEach(v => {
+                if (!existingCodes.includes(v.code)) {
+                    v.printed = false; 
+                    existingVouchers.push(v);
+                    addedCount++;
+                }
+            });
+
+            localStorage.setItem('stored_vouchers', JSON.stringify(existingVouchers));
+            
+            if(addedCount > 0) {
+                alert(`✅ Cloud Sync Complete!\nAdded ${addedCount} new vouchers.`);
+            } else {
+                alert("☁️ Connected to Cloud.\nNo new vouchers (Duplicates skipped).");
+            }
+            updateDisplay();
+        })
+        .catch(err => {
+            alert("❌ Sync Failed.\n1. Check Internet\n2. Check Gist Link");
+        })
+        .finally(() => {
+            btn.innerHTML = "<span>☁️</span> Sync Cloud";
+            btn.style.opacity = "1";
+        });
+    }
+
+    // --- DISPLAY LOGIC ---
     function updateDisplay() {
         const listDiv = document.getElementById('localList');
         const countDiv = document.getElementById('vCount');
@@ -56,11 +187,7 @@
         listDiv.innerHTML = "";
 
         if (vouchers.length === 0) {
-            listDiv.innerHTML = `
-                <div class="empty-state">
-                    <span class="empty-icon">📦</span>
-                    <p>No vouchers.</p>
-                </div>`;
+            listDiv.innerHTML = "<div style='text-align:center; padding:40px; color:#999;'>📦 No vouchers loaded.</div>";
             return;
         }
 
@@ -94,9 +221,41 @@
         });
     }
 
-    // Don't forget to include the Sync, Print, and Clear functions too!
-    
-    // Init
+    // --- PRINT LOGIC ---
+    function printLocalVoucher(index) {
+        let vouchers = JSON.parse(localStorage.getItem('stored_vouchers'));
+        const v = vouchers[index];
+        const price = v.amount ? parseInt(v.amount).toLocaleString() : '0';
+
+        const printData = 
+            "\x1ba\x01" + "JAVEROIN WIFI\n" + 
+            "--------------------------------\n" +
+            "INTERNET VOUCHER\n" +
+            "--------------------------------\n" +
+            "\x1ba\x00" + 
+            "PLAN  : " + v.plan + "\n" +
+            "PRICE : " + price + " UGX\n\n" +
+            "VOUCHER:\n" +
+            "\x1b!\x38" + v.code + "\n" + 
+            "\x1b!\x00" + "\n" +
+            "--------------------------------\n" +
+            "\x1ba\x01" + "Connect to: Javeroin Unlimited\n" +
+            "Powered by Javeroin Systems\n\n\n";
+
+        window.location.href = "rawbt:base64," + btoa(printData);
+        vouchers[index].printed = true;
+        localStorage.setItem('stored_vouchers', JSON.stringify(vouchers));
+        setTimeout(() => updateDisplay(), 1000);
+    }
+
+    function clearAllVouchers() {
+        if(confirm("Delete all vouchers from memory?")) {
+            localStorage.removeItem('stored_vouchers');
+            updateDisplay();
+        }
+    }
+
     updateDisplay();
 </script>
 </body>
+</html>
