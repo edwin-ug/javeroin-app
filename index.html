@@ -153,7 +153,8 @@
             let addedCount = 0;
             
             newData.forEach(v => {
-                if (!existingCodes.includes(v.code)) {
+                // The 'v.code &&' part ensures we ignore empty or broken lines
+            if (v.code && !existingCodes.includes(v.code)) {
                     v.printed = false; 
                     existingVouchers.push(v);
                     addedCount++;
@@ -260,3 +261,4 @@
 </script>
 </body>
 </html>
+
