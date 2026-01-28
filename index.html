@@ -29,7 +29,6 @@
         .stat-label { font-size: 9px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
         .stat-val { font-size: 18px; font-weight: 800; margin-top: 4px; }
 
-        /* --- Stock Alert Style --- */
         .stock-alert { background: #fee2e2 !important; border: 2px solid var(--danger); animation: pulse 2s infinite; }
         .stock-alert .stat-val { color: var(--danger); }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -52,7 +51,9 @@
         }
         .nav-item { border: none; background: none; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item.active { color: var(--primary-dark); }
-        .nav-icon { font-size: 20px; }
+        
+        /* New Nav Icon Style */
+        .nav-icon-img { width: 20px; height: 20px; object-fit: contain; }
 
         .page { display: none; }
         .page.active { display: block; }
@@ -99,16 +100,16 @@
     </div>
     <div id="historyList" class="list-container"></div>
     <div class="list-container">
-        <button class="btn-report" onclick="downloadReport()">📩 Export CSV Report</button>
+        <button class="btn-report" onclick="downloadReport()">Export CSV Report</button>
     </div>
 </div>
 
 <nav class="nav-bar">
     <button class="nav-item active" onclick="showPage('pageStore', this)">
-        <span class="nav-icon">🏪</span><span>Store</span>
+        <img src="store.png" class="nav-icon-img" alt="Store"><span>Store</span>
     </button>
     <button class="nav-item" onclick="showPage('pageHistory', this)">
-        <span class="nav-icon">📜</span><span>History</span>
+        <img src="history.png" class="nav-icon-img" alt="History"><span>History</span>
     </button>
 </nav>
 
@@ -166,7 +167,7 @@
                     </div>
                     <div style="width: 60px; display:flex; align-items:center; justify-content:center; border-left: 1px dashed #eee;">
                         <button style="background:none; border:none; cursor:pointer;" onclick="handlePrint('${fKey}', '${v.code}', '${v.plan}', '${v.amount}', ${isSold}, '${v.soldAt || ""}')">
-                            <img src="invoice.png" style="width:28px;" onerror="this.outerHTML='🖨️'">
+                            <img src="invoice.png" style="width:28px;" onerror="this.src='printer.png'">
                         </button>
                     </div>
                 </div>`;
@@ -180,7 +181,6 @@
             }
         });
 
-        // --- STOCK ALERT LOGIC ---
         document.getElementById('stockCount').innerText = stock;
         if (stock < 10 && stock > 0) {
             stockCard.classList.add('stock-alert');
