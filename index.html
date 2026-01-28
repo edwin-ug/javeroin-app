@@ -100,7 +100,7 @@
 
 <div class="app-header">
     <h1 class="app-title">Javeroin Seller</h1>
-    <div class="app-version">v3.4 (Secure Cloud)</div>
+    <div class="app-version">v3.5 (Reset)</div>
 </div>
 
 <div class="stats-card">
@@ -123,7 +123,7 @@
     // --- SECURITY LOGIC ---
     function checkPin() {
         const pin = document.getElementById('pinInput').value;
-        if(pin === "2580") { // CHANGE THIS PIN IF YOU WANT
+        if(pin === "2580") { 
             document.getElementById('loginOverlay').style.display = 'none';
         } else {
             document.getElementById('errorMsg').style.display = 'block';
@@ -136,8 +136,9 @@
         btn.innerHTML = "<span>☁️</span> Connecting...";
         btn.style.opacity = "0.7";
 
-        // *** PASTE YOUR GIST URL HERE ***
-        const serverUrl = 'https://gist.githubusercontent.com/edwin-ug/71a938eef594ed3a04e5e7320d0f4c27/raw/vouchers.json';
+        // *** STEP 2: PASTE YOUR NEW RAW GIST LINK HERE ***
+        // Example: https://gist.githubusercontent.com/user/id/raw/vouchers.json
+        const serverUrl = 'https://gist.githubusercontent.com/edwin-ug/c2c7cc2a3b61ca72056910c2977cb047/raw/vouchers.json';
         
         const freshUrl = serverUrl + '?t=' + new Date().getTime();
 
@@ -259,5 +260,3 @@
 </script>
 </body>
 </html>
-
-
