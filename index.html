@@ -2,17 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Javeroin Seller Secure</title>
+    <title>Javeroin Realtime</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
-        :root {
-            --primary: #06b6d4;      
+        :root { 
+            --primary: #06b6d4; 
             --primary-dark: #0891b2; 
-            --bg: #f3f4f6;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
+            --bg: #f3f4f6; 
+            --text-main: #1f2937; 
+            --text-muted: #6b7280; 
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -25,53 +28,45 @@
             color: var(--text-main);
         }
 
-        /* --- HEADER & STATS --- */
-        .app-header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 25px 20px 50px 20px;
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
-            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25);
-            text-align: center;
+        /* --- HEADER --- */
+        .app-header { 
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+            color: white; 
+            padding: 25px 20px 50px 20px; 
+            border-bottom-left-radius: 20px; 
+            border-bottom-right-radius: 20px; 
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25); 
+            text-align: center; 
         }
         .app-title { font-size: 20px; font-weight: 800; margin: 0; }
         .app-version { font-size: 11px; opacity: 0.8; margin-top: 4px; }
 
-        .stats-card {
-            background: white;
-            width: 90%;
-            max-width: 400px;
-            margin: -35px auto 20px auto;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            text-align: center;
+        /* --- STATS --- */
+        .stats-card { 
+            background: white; 
+            width: 90%; 
+            max-width: 400px; 
+            margin: -35px auto 20px auto; 
+            border-radius: 12px; 
+            padding: 20px; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+            text-align: center; 
         }
         .stats-number { font-size: 36px; font-weight: 800; color: var(--primary-dark); margin: 5px 0; }
         
-        /* --- BUTTONS --- */
-        .actions-grid {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 10px;
-            width: 90%;
-            max-width: 400px;
-            margin: 0 auto 20px auto;
-        }
-        .btn {
-            border: none; padding: 15px; border-radius: 10px; font-weight: 600; font-size: 14px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-sync { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
-        .btn-clear { background: #fee2e2; color: #ef4444; }
-
         /* --- LIST --- */
         #localList { width: 90%; max-width: 400px; margin: 0 auto; }
-        .voucher-card {
-            background: white; border-radius: 12px; margin-bottom: 12px;
-            display: flex; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        
+        .voucher-card { 
+            background: white; 
+            border-radius: 12px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            overflow: hidden; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            transition: all 0.3s ease; 
         }
+        
         .color-strip { width: 6px; flex-shrink: 0; }
         .card-content { flex-grow: 1; padding: 15px; }
         .voucher-code { font-family: 'Roboto Mono', monospace; font-size: 20px; font-weight: 700; letter-spacing: 1px; }
@@ -79,121 +74,115 @@
         .price-badge { background: #ecfdf5; color: #047857; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
         
         .print-section { width: 70px; border-left: 2px dashed #e5e7eb; background: #f9fafb; display: flex; align-items: center; justify-content: center; }
-        .btn-print-icon { background: none; border: none; font-size: 24px; width: 100%; height: 100%; }
+        .btn-print-icon { background: none; border: none; font-size: 24px; width: 100%; height: 100%; cursor: pointer; }
 
-        .is-printed { opacity: 0.6; background: #f3f4f6; }
+        /* --- STATES --- */
+        .is-printed { 
+            opacity: 0.6; 
+            background: #e5e7eb; 
+            /* Optional: Hide card entirely if you prefer */
+            /* display: none; */ 
+        }
         .is-printed .voucher-code { text-decoration: line-through; color: #9ca3af; }
-        .status-printed { font-size: 10px; background: #cffafe; color: #0e7490; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+        .status-printed { font-size: 10px; background: #94a3b8; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        
+        .loading-spinner { text-align:center; padding: 40px; color: var(--text-muted); font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-    <div style="background:white; padding:30px; border-radius:20px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-        <h2 style="margin:0 0 20px 0; color:var(--text-main);">🔐 Security</h2>
-        <input type="password" id="pinInput" placeholder="Enter PIN" style="font-size:24px; padding:10px; width:150px; text-align:center; letter-spacing:5px; border:2px solid #e5e7eb; border-radius:10px; outline:none;">
-        <br><br>
-        <button onclick="checkPin()" style="background:var(--primary-dark); color:white; border:none; padding:12px 30px; border-radius:10px; font-weight:bold; font-size:16px;">UNLOCK</button>
-        <p id="errorMsg" style="color:red; font-size:12px; margin-top:10px; display:none;">Incorrect PIN</p>
-    </div>
-</div>
-
 <div class="app-header">
     <h1 class="app-title">Javeroin Seller</h1>
-    <div class="app-version">v3.5 (Reset)</div>
+    <div class="app-version">v4.0 (Realtime Sync)</div>
 </div>
 
 <div class="stats-card">
-    <div style="font-size:12px; color:#6b7280; font-weight:600;">VOUCHERS AVAILABLE</div>
-    <div class="stats-number" id="vCount">0</div>
+    <div style="font-size:12px; color:#6b7280; font-weight:600; letter-spacing: 1px;">AVAILABLE STOCK</div>
+    <div class="stats-number" id="vCount">...</div>
 </div>
 
-<div class="actions-grid">
-    <button class="btn btn-sync" onclick="syncVouchers()">
-        <span>☁️</span> Sync Cloud
-    </button>
-    <button class="btn btn-clear" onclick="clearAllVouchers()">
-        <span>🗑️</span>
-    </button>
+<div id="localList">
+    <div class="loading-spinner">
+        Connecting to Database...<br>
+        <small style="opacity:0.7">Using Firebase Realtime</small>
+    </div>
 </div>
-
-<div id="localList"></div>
 
 <script>
-    // --- SECURITY LOGIC ---
-    function checkPin() {
-        const pin = document.getElementById('pinInput').value;
-        if(pin === "2580") { 
-            document.getElementById('loginOverlay').style.display = 'none';
+    // --- 1. YOUR CONFIGURATION ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyD9L328Bp8Enor5DPeBNwtlIG3MBNLKMTs",
+        authDomain: "javeroin-db.firebaseapp.com",
+        databaseURL: "https://javeroin-db-default-rtdb.firebaseio.com",
+        projectId: "javeroin-db",
+        storageBucket: "javeroin-db.firebasestorage.app",
+        messagingSenderId: "156189854768",
+        appId: "1:156189854768:web:b80af1449987a5b0a3f1f5",
+        measurementId: "G-01JPYP81C3"
+    };
+
+    // --- 2. INITIALIZE ---
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    // Check connection
+    const connectedRef = db.ref(".info/connected");
+    connectedRef.on("value", (snap) => {
+        if (snap.val() === true) {
+            console.log("🔥 Connected to Firebase!");
         } else {
-            document.getElementById('errorMsg').style.display = 'block';
+            console.log("🚫 Disconnected");
         }
-    }
+    });
 
-    // --- SYNC LOGIC ---
-    function syncVouchers() {
-        const btn = document.querySelector('.btn-sync');
-        btn.innerHTML = "<span>☁️</span> Connecting...";
-        btn.style.opacity = "0.7";
+    const vouchersRef = db.ref('/'); // Listening to root
 
-        // *** STEP 2: PASTE YOUR NEW RAW GIST LINK HERE ***
-        // Example: https://gist.githubusercontent.com/user/id/raw/vouchers.json
-        const serverUrl = 'https://gist.githubusercontent.com/edwin-ug/c2c7cc2a3b61ca72056910c2977cb047/raw/vouchers.json';
-        
-        const freshUrl = serverUrl + '?t=' + new Date().getTime();
+    // --- 3. REALTIME LISTENER ---
+    vouchersRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        renderList(data);
+    }, (error) => {
+        console.error(error);
+        document.getElementById('localList').innerHTML = `<div class='loading-spinner' style='color:red'>Error: ${error.message}</div>`;
+    });
 
-        fetch(freshUrl)
-        .then(res => {
-            if(!res.ok) throw new Error("Link broken");
-            return res.json();
-        })
-        .then(newData => {
-            let existingVouchers = JSON.parse(localStorage.getItem('stored_vouchers')) || [];
-            let existingCodes = existingVouchers.map(v => v.code);
-            let addedCount = 0;
-            
-            newData.forEach(v => {
-            // The 'v.code &&' part ensures we ignore empty or broken lines
-            if (v.code && !existingCodes.includes(v.code)) {
-                    v.printed = false; 
-                    existingVouchers.push(v);
-                    addedCount++;
-                }
-            });
-
-            localStorage.setItem('stored_vouchers', JSON.stringify(existingVouchers));
-            
-            if(addedCount > 0) {
-                alert(`✅ Cloud Sync Complete!\nAdded ${addedCount} new vouchers.`);
-            } else {
-                alert("☁️ Connected to Cloud.\nNo new vouchers (Duplicates skipped).");
-            }
-            updateDisplay();
-        })
-        .catch(err => {
-            alert("❌ Sync Failed.\n1. Check Internet\n2. Check Gist Link");
-        })
-        .finally(() => {
-            btn.innerHTML = "<span>☁️</span> Sync Cloud";
-            btn.style.opacity = "1";
-        });
-    }
-
-    // --- DISPLAY LOGIC ---
-    function updateDisplay() {
+    function renderList(data) {
         const listDiv = document.getElementById('localList');
         const countDiv = document.getElementById('vCount');
-        let vouchers = JSON.parse(localStorage.getItem('stored_vouchers')) || [];
         
-        countDiv.innerText = vouchers.length;
-        listDiv.innerHTML = "";
-
-        if (vouchers.length === 0) {
-            listDiv.innerHTML = "<div style='text-align:center; padding:40px; color:#999;'>📦 No vouchers loaded.</div>";
+        if (!data) {
+            listDiv.innerHTML = "<div class='loading-spinner'>Database is empty.<br>Please import vouchers.json in Console.</div>";
+            countDiv.innerText = "0";
             return;
         }
 
+        // Handle both Array (imported JSON) and Object (pushed data) structures
+        let vouchers = [];
+        let keys = []; // Keep track of Keys (0, 1, 2...) to update back
+        
+        if (Array.isArray(data)) {
+            vouchers = data;
+            keys = data.map((_, i) => i);
+        } else {
+            vouchers = Object.values(data);
+            keys = Object.keys(data);
+        }
+
+        // Calculate Stats (Only count unprinted)
+        // We ensure we only count valid items with a code
+        const availableCount = vouchers.filter(v => v && v.code && !v.printed).length;
+        countDiv.innerText = availableCount;
+
+        listDiv.innerHTML = ""; 
+
+        // Render Cards
         vouchers.forEach((v, index) => {
+            if (!v || !v.code) return; // Skip ghosts/empty lines
+
+            // "printed" might be stored as string "true" or boolean true, handle both
+            const isPrinted = v.printed === true || v.printed === "true";
+            const originalKey = keys[index]; // Important for updating the specific row
+
             let color = "#cbd5e1"; 
             if (v.plan && v.plan.includes("4 Hours")) color = "#f59e0b"; 
             if (v.plan && v.plan.includes("1 Day"))   color = "#06b6d4"; 
@@ -201,10 +190,15 @@
             if (v.plan && v.plan.includes("1 Month")) color = "#ef4444"; 
 
             const price = v.amount ? parseInt(v.amount).toLocaleString() : '0';
-            const printedBadge = v.printed ? `<span class="status-printed">✓ PRINTED</span>` : '';
+            const printedBadge = isPrinted ? `<span class="status-printed">SOLD OUT</span>` : '';
+
+            // If printed, show Lock icon, otherwise Printer icon
+            const btnIcon = isPrinted ? '🔒' : '🖨️';
+            // Disable click if printed
+            const clickAction = isPrinted ? '' : `onclick="printAndSync('${originalKey}', '${v.code}', '${v.plan}', '${v.amount}')"`;
 
             listDiv.innerHTML += `
-                <div class="voucher-card ${v.printed ? 'is-printed' : ''}">
+                <div class="voucher-card ${isPrinted ? 'is-printed' : ''}">
                     <div class="color-strip" style="background: ${color}"></div>
                     <div class="card-content">
                         <div class="voucher-code">${v.code}</div>
@@ -215,51 +209,42 @@
                         <div style="margin-top:5px;">${printedBadge}</div>
                     </div>
                     <div class="print-section">
-                        <button class="btn-print-icon" onclick="printLocalVoucher(${index})">
-                            ${v.printed ? '🔄' : '🖨️'}
+                        <button class="btn-print-icon" ${clickAction}>
+                            ${btnIcon}
                         </button>
                     </div>
                 </div>`;
         });
     }
 
-    // --- PRINT LOGIC ---
-    function printLocalVoucher(index) {
-        let vouchers = JSON.parse(localStorage.getItem('stored_vouchers'));
-        const v = vouchers[index];
-        const price = v.amount ? parseInt(v.amount).toLocaleString() : '0';
+    // --- 4. PRINT & SYNC ACTION ---
+    function printAndSync(key, code, plan, amount) {
+        if(!confirm(`Print ${plan} voucher?`)) return;
 
+        // A. Send to Printer (RawBT)
+        const price = amount ? parseInt(amount).toLocaleString() : '0';
         const printData = 
             "\x1ba\x01" + "JAVEROIN WIFI\n" + 
             "--------------------------------\n" +
             "INTERNET VOUCHER\n" +
             "--------------------------------\n" +
             "\x1ba\x00" + 
-            "PLAN  : " + v.plan + "\n" +
+            "PLAN  : " + plan + "\n" +
             "PRICE : " + price + " UGX\n\n" +
             "VOUCHER:\n" +
-            "\x1b!\x38" + v.code + "\n" + 
+            "\x1b!\x38" + code + "\n" + 
             "\x1b!\x00" + "\n" +
             "--------------------------------\n" +
-            "\x1ba\x01" + "Connect to: Javeroin Unlimited\n" +
-            "Powered by Javeroin Systems\n\n\n";
+            "\x1ba\x01" + "Connect to: Javeroin Unlimited\n\n\n";
 
+        // Open RawBT
         window.location.href = "rawbt:base64," + btoa(printData);
-        vouchers[index].printed = true;
-        localStorage.setItem('stored_vouchers', JSON.stringify(vouchers));
-        setTimeout(() => updateDisplay(), 1000);
-    }
 
-    function clearAllVouchers() {
-        if(confirm("Delete all vouchers from memory?")) {
-            localStorage.removeItem('stored_vouchers');
-            updateDisplay();
-        }
+        // B. Update Cloud (This triggers the update on ALL devices)
+        // We specificy the path (key) and set printed = true
+        db.ref('/' + key).update({ printed: true })
+        .catch(err => alert("Error updating cloud: " + err.message));
     }
-
-    updateDisplay();
 </script>
 </body>
 </html>
-
-
