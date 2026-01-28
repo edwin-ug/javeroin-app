@@ -28,7 +28,6 @@
             color: var(--text-main);
         }
 
-        /* --- HEADER --- */
         .app-header { 
             background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
             color: white; 
@@ -39,9 +38,7 @@
             text-align: center; 
         }
         .app-title { font-size: 20px; font-weight: 800; margin: 0; }
-        .app-version { font-size: 11px; opacity: 0.8; margin-top: 4px; }
 
-        /* --- STATS --- */
         .stats-card { 
             background: white; 
             width: 90%; 
@@ -54,7 +51,6 @@
         }
         .stats-number { font-size: 36px; font-weight: 800; color: var(--primary-dark); margin: 5px 0; }
         
-        /* --- LIST --- */
         #localList { width: 90%; max-width: 400px; margin: 0 auto; }
         
         .voucher-card { 
@@ -74,14 +70,14 @@
         .price-badge { background: #ecfdf5; color: #047857; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
         
         .print-section { width: 70px; border-left: 2px dashed #e5e7eb; background: #f9fafb; display: flex; align-items: center; justify-content: center; }
-        .btn-print-icon { background: none; border: none; font-size: 24px; width: 100%; height: 100%; cursor: pointer; }
+        .btn-print-icon { background: none; border: none; width: 100%; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .print-icon-img { width: 32px; height: 32px; object-fit: contain; }
 
         /* --- STATES --- */
         .is-printed { 
-            opacity: 0.6; 
-            background: #e5e7eb; 
-            /* Optional: Hide card entirely if you prefer */
-            /* display: none; */ 
+            opacity: 0.5; /* Keeping it greyed out for visual tracking */
+            background: #f1f5f9; 
         }
         .is-printed .voucher-code { text-decoration: line-through; color: #9ca3af; }
         .status-printed { font-size: 10px; background: #94a3b8; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
@@ -93,7 +89,7 @@
 
 <div class="app-header">
     <h1 class="app-title">Javeroin Seller</h1>
-    <div class="app-version">v4.0 (Realtime Sync)</div>
+    <div class="app-version">v4.2 (Re-printable)</div>
 </div>
 
 <div class="stats-card">
@@ -102,14 +98,10 @@
 </div>
 
 <div id="localList">
-    <div class="loading-spinner">
-        Connecting to Database...<br>
-        <small style="opacity:0.7">Using Firebase Realtime</small>
-    </div>
+    <div class="loading-spinner">Connecting to Database...</div>
 </div>
 
 <script>
-    // --- 1. YOUR CONFIGURATION ---
     const firebaseConfig = {
         apiKey: "AIzaSyD9L328Bp8Enor5DPeBNwtlIG3MBNLKMTs",
         authDomain: "javeroin-db.firebaseapp.com",
@@ -121,29 +113,13 @@
         measurementId: "G-01JPYP81C3"
     };
 
-    // --- 2. INITIALIZE ---
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    // Check connection
-    const connectedRef = db.ref(".info/connected");
-    connectedRef.on("value", (snap) => {
-        if (snap.val() === true) {
-            console.log("🔥 Connected to Firebase!");
-        } else {
-            console.log("🚫 Disconnected");
-        }
-    });
+    const vouchersRef = db.ref('/'); 
 
-    const vouchersRef = db.ref('/'); // Listening to root
-
-    // --- 3. REALTIME LISTENER ---
     vouchersRef.on('value', (snapshot) => {
         const data = snapshot.val();
         renderList(data);
-    }, (error) => {
-        console.error(error);
-        document.getElementById('localList').innerHTML = `<div class='loading-spinner' style='color:red'>Error: ${error.message}</div>`;
     });
 
     function renderList(data) {
@@ -151,14 +127,13 @@
         const countDiv = document.getElementById('vCount');
         
         if (!data) {
-            listDiv.innerHTML = "<div class='loading-spinner'>Database is empty.<br>Please import vouchers.json in Console.</div>";
+            listDiv.innerHTML = "<div class='loading-spinner'>No data found.</div>";
             countDiv.innerText = "0";
             return;
         }
 
-        // Handle both Array (imported JSON) and Object (pushed data) structures
         let vouchers = [];
-        let keys = []; // Keep track of Keys (0, 1, 2...) to update back
+        let keys = []; 
         
         if (Array.isArray(data)) {
             vouchers = data;
@@ -168,20 +143,16 @@
             keys = Object.keys(data);
         }
 
-        // Calculate Stats (Only count unprinted)
-        // We ensure we only count valid items with a code
         const availableCount = vouchers.filter(v => v && v.code && !v.printed).length;
         countDiv.innerText = availableCount;
 
         listDiv.innerHTML = ""; 
 
-        // Render Cards
         vouchers.forEach((v, index) => {
-            if (!v || !v.code) return; // Skip ghosts/empty lines
+            if (!v || !v.code) return; 
 
-            // "printed" might be stored as string "true" or boolean true, handle both
             const isPrinted = v.printed === true || v.printed === "true";
-            const originalKey = keys[index]; // Important for updating the specific row
+            const originalKey = keys[index];
 
             let color = "#cbd5e1"; 
             if (v.plan && v.plan.includes("4 Hours")) color = "#f59e0b"; 
@@ -190,12 +161,13 @@
             if (v.plan && v.plan.includes("1 Month")) color = "#ef4444"; 
 
             const price = v.amount ? parseInt(v.amount).toLocaleString() : '0';
-            const printedBadge = isPrinted ? `<span class="status-printed">SOLD OUT</span>` : '';
+            const printedBadge = isPrinted ? `<span class="status-printed">SOLD</span>` : '';
 
-            // If printed, show Lock icon, otherwise Printer icon
-            const btnIcon = isPrinted ? '🔒' : '🖨️';
-            // Disable click if printed
-            const clickAction = isPrinted ? '' : `onclick="printAndSync('${originalKey}', '${v.code}', '${v.plan}', '${v.amount}')"`;
+            // We keep the icon the same regardless of printed status
+            const btnContent = `<img src="https://raw.githubusercontent.com/edwin-ug/javeroin-app/main/invoice.png" class="print-icon-img" alt="Print">`;
+
+            // We keep the clickAction active for both SOLD and AVAILABLE items
+            const clickAction = `onclick="printAndSync('${originalKey}', '${v.code}', '${v.plan}', '${v.amount}', ${isPrinted})"`;
 
             listDiv.innerHTML += `
                 <div class="voucher-card ${isPrinted ? 'is-printed' : ''}">
@@ -210,23 +182,23 @@
                     </div>
                     <div class="print-section">
                         <button class="btn-print-icon" ${clickAction}>
-                            ${btnIcon}
+                            ${btnContent}
                         </button>
                     </div>
                 </div>`;
         });
     }
 
-    // --- 4. PRINT & SYNC ACTION ---
-    function printAndSync(key, code, plan, amount) {
-        if(!confirm(`Print ${plan} voucher?`)) return;
+    function printAndSync(key, code, plan, amount, alreadySold) {
+        // Different message if it was already sold
+        const msg = alreadySold ? `Re-print SOLD ${plan} voucher?` : `Print ${plan} voucher?`;
+        if(!confirm(msg)) return;
 
-        // A. Send to Printer (RawBT)
         const price = amount ? parseInt(amount).toLocaleString() : '0';
         const printData = 
             "\x1ba\x01" + "JAVEROIN WIFI\n" + 
             "--------------------------------\n" +
-            "INTERNET VOUCHER\n" +
+            "RE-PRINT VOUCHER\n" + // Changed title for transparency
             "--------------------------------\n" +
             "\x1ba\x00" + 
             "PLAN  : " + plan + "\n" +
@@ -237,13 +209,12 @@
             "--------------------------------\n" +
             "\x1ba\x01" + "Connect to: Javeroin Unlimited\n\n\n";
 
-        // Open RawBT
         window.location.href = "rawbt:base64," + btoa(printData);
 
-        // B. Update Cloud (This triggers the update on ALL devices)
-        // We specificy the path (key) and set printed = true
-        db.ref('/' + key).update({ printed: true })
-        .catch(err => alert("Error updating cloud: " + err.message));
+        // We only need to tell Firebase it's printed if it wasn't already
+        if (!alreadySold) {
+            db.ref('/' + key).update({ printed: true });
+        }
     }
 </script>
 </body>
