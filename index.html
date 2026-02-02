@@ -310,10 +310,27 @@
         const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         document.getElementById('headerDate').innerText = today;
 
+        let currentResetTime = 0;
+
         vouchersRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
-            masterData = Array.isArray(data) ? data : Object.entries(data).map(([k, v]) => ({ ...v, firebaseKey: k }));
+
+            // Extract global reset time if present
+            if (data.globalResetTime) {
+                currentResetTime = data.globalResetTime;
+            }
+
+            // Convert data to array, filtering out the settings key
+            masterData = [];
+            if (Array.isArray(data)) {
+                masterData = data;
+            } else {
+                Object.entries(data).forEach(([k, v]) => {
+                    if (k === 'globalResetTime') return;
+                    masterData.push({ ...v, firebaseKey: k });
+                });
+            }
             renderAll();
         });
 
@@ -326,7 +343,7 @@
             let storeHtml = "";
             let historyItems = [];
 
-            const resetTime = parseInt(localStorage.getItem('javeroin_reset_time') || 0);
+            const resetTime = currentResetTime;
 
             masterData.forEach((v, index) => {
                 if (!v || !v.code) return;
@@ -448,7 +465,7 @@
         }
 
         function downloadReport() {
-            const resetTime = parseInt(localStorage.getItem('javeroin_reset_time') || 0);
+            const resetTime = currentResetTime;
             const sold = masterData.filter(v => {
                 if (v.printed !== true && v.printed !== "true") return false;
                 return parseSoldDate(v.soldAt) > resetTime;
@@ -470,9 +487,9 @@
         }
 
         function resetSales() {
-            if (confirm("Start a new sales shift? This will hide current history and reset the total to 0.")) {
-                localStorage.setItem('javeroin_reset_time', new Date().getTime());
-                renderAll();
+            if (confirm("Start a new sales shift? This will hide current history for ALL DEVICES.")) {
+                db.ref('/globalResetTime').set(Date.now());
+                // renderAll() will be called automatically by the listener
             }
         }
     </script>
