@@ -351,8 +351,11 @@
                 const fKey = v.firebaseKey !== undefined ? v.firebaseKey : index;
 
                 if (isSold) {
-                    const saleTime = parseSoldDate(v.soldAt);
-                    if (saleTime > resetTime) {
+                    const saleTime = v.soldTimestamp ? v.soldTimestamp : parseSoldDate(v.soldAt);
+                    // Add 60s buffer for legacy string dates to avoid losing sales made int the same minute as reset
+                    const buffer = v.soldTimestamp ? 0 : 60000;
+
+                    if ((saleTime + buffer) > resetTime) {
                         historyItems.push({ v, fKey });
                         sales += parseInt(v.amount || 0);
                     }
@@ -363,7 +366,11 @@
             });
 
             // Sort history: newest first
-            historyItems.sort((a, b) => parseSoldDate(b.v.soldAt) - parseSoldDate(a.v.soldAt));
+            historyItems.sort((a, b) => {
+                const timeA = a.v.soldTimestamp || parseSoldDate(a.v.soldAt);
+                const timeB = b.v.soldTimestamp || parseSoldDate(b.v.soldAt);
+                return timeB - timeA;
+            });
 
             // Generate history HTML
             let historyHtml = "";
@@ -461,14 +468,16 @@
             const printData = `\x1ba\x01JAVEROIN WIFI\n--------------------------------\n${isSold ? "DUPLICATE RECEIPT" : "OFFICIAL VOUCHER"}\n--------------------------------\n\x1ba\x00PLAN  : ${plan}\nPRICE : ${parseInt(amount).toLocaleString()} UGX\nTIME  : ${soldTime}\n\nVOUCHER CODE:\n\x1b!\x38${code}\n\x1b!\x00\n--------------------------------\n\x1ba\x01Powered by Javeroin Systems\n\n\n`;
             window.location.href = "rawbt:base64," + btoa(printData);
 
-            if (!isSold) db.ref('/' + key).update({ printed: true, soldAt: soldTime });
+            if (!isSold) db.ref('/' + key).update({ printed: true, soldAt: soldTime, soldTimestamp: firebase.database.ServerValue.TIMESTAMP });
         }
 
         function downloadReport() {
             const resetTime = currentResetTime;
             const sold = masterData.filter(v => {
                 if (v.printed !== true && v.printed !== "true") return false;
-                return parseSoldDate(v.soldAt) > resetTime;
+                const saleTime = v.soldTimestamp ? v.soldTimestamp : parseSoldDate(v.soldAt);
+                const buffer = v.soldTimestamp ? 0 : 60000;
+                return (saleTime + buffer) > resetTime;
             });
 
             if (sold.length === 0) {
