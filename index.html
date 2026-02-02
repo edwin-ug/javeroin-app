@@ -229,40 +229,47 @@
             border-radius: 10px;
             font-weight: 800;
             margin-top: 10px;
+            cursor: pointer;
+        }
 
-            .is-printed {}
+        .is-printed {
+            opacity: 0.6;
+            background: #f8fafc;
+        }
 
-            .is-printed {
-                opacity: 0.6;
-                background: #f8fafc;
+        /* Printable Receipt Styling */
+        #printable-receipt {
+            display: none;
+            font-family: 'Roboto Mono', monospace;
+            width: 300px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
             }
 
-            /* Printable Receipt Styling */
+            #printable-receipt,
+            #printable-receipt * {
+                visibility: visible;
+            }
+
             #printable-receipt {
-                display: none;
-                font-family: 'Roboto Mono', monospace;
-                width: 300px;
-                padding: 10px;
-                text-align: center;
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
             }
 
-            @media print {
-                body * {
-                    visibility: hidden;
-                }
-
-                #printable-receipt,
-                #printable-receipt * {
-                    visibility: visible;
-                }
-
-                #printable-receipt {}
-
-                @page {
-                    margin: 0;
-                    size: 58mm auto;
-                }
+            @page {
+                margin: 0;
+                size: 58mm auto;
             }
+        }
     </style>
 </head>
 
@@ -511,7 +518,9 @@
                 soldTime = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ", " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             }
 
-            const isAndroid = /Android/i.test(navigator.userAgent);
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            const isAndroid = /android/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
             if (isAndroid) {
                 // Use RawBT scheme for Android
