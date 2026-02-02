@@ -220,6 +220,18 @@
             cursor: pointer;
         }
 
+        .btn-reset {
+            width: 100%;
+            padding: 15px;
+            background: white;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+            border-radius: 10px;
+            font-weight: 800;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
         .is-printed {
             opacity: 0.6;
             background: #f8fafc;
@@ -264,6 +276,7 @@
         <div id="historyList" class="list-container"></div>
         <div class="list-container">
             <button class="btn-report" onclick="downloadReport()">Export CSV Report</button>
+            <button class="btn-reset" onclick="resetSales()">Start New Shift (Reset 0)</button>
         </div>
     </div>
 
@@ -313,14 +326,19 @@
             let storeHtml = "";
             let historyItems = [];
 
+            const resetTime = parseInt(localStorage.getItem('javeroin_reset_time') || 0);
+
             masterData.forEach((v, index) => {
                 if (!v || !v.code) return;
                 const isSold = v.printed === true || v.printed === "true";
                 const fKey = v.firebaseKey !== undefined ? v.firebaseKey : index;
 
                 if (isSold) {
-                    historyItems.push({ v, fKey });
-                    sales += parseInt(v.amount || 0);
+                    const saleTime = parseSoldDate(v.soldAt);
+                    if (saleTime > resetTime) {
+                        historyItems.push({ v, fKey });
+                        sales += parseInt(v.amount || 0);
+                    }
                 } else {
                     storeHtml += createCardHtml(v, fKey, false);
                     stock++;
@@ -430,15 +448,32 @@
         }
 
         function downloadReport() {
-            const sold = masterData.filter(v => v.printed === true || v.printed === "true");
+            const resetTime = parseInt(localStorage.getItem('javeroin_reset_time') || 0);
+            const sold = masterData.filter(v => {
+                if (v.printed !== true && v.printed !== "true") return false;
+                return parseSoldDate(v.soldAt) > resetTime;
+            });
+
+            if (sold.length === 0) {
+                alert("No sales to export in current shift.");
+                return;
+            }
+
             let csv = "Code,Plan,Amount,Sold At\n";
             sold.forEach(v => { csv += `${v.code},${v.plan},${v.amount},${v.soldAt}\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Javeroin_Sales_${new Date().toLocaleDateString()}.csv`;
+            a.download = `Javeroin_Shift_${new Date().toLocaleDateString()}.csv`;
             a.click();
+        }
+
+        function resetSales() {
+            if (confirm("Start a new sales shift? This will hide current history and reset the total to 0.")) {
+                localStorage.setItem('javeroin_reset_time', new Date().getTime());
+                renderAll();
+            }
         }
     </script>
 </body>
