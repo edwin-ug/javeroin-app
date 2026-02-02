@@ -229,13 +229,40 @@
             border-radius: 10px;
             font-weight: 800;
             margin-top: 10px;
-            cursor: pointer;
-        }
 
-        .is-printed {
-            opacity: 0.6;
-            background: #f8fafc;
-        }
+            .is-printed {}
+
+            .is-printed {
+                opacity: 0.6;
+                background: #f8fafc;
+            }
+
+            /* Printable Receipt Styling */
+            #printable-receipt {
+                display: none;
+                font-family: 'Roboto Mono', monospace;
+                width: 300px;
+                padding: 10px;
+                text-align: center;
+            }
+
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+
+                #printable-receipt,
+                #printable-receipt * {
+                    visibility: visible;
+                }
+
+                #printable-receipt {}
+
+                @page {
+                    margin: 0;
+                    size: 58mm auto;
+                }
+            }
     </style>
 </head>
 
@@ -278,6 +305,24 @@
             <button class="btn-report" onclick="downloadReport()">Export CSV Report</button>
             <button class="btn-reset" onclick="resetSales()">Start New Shift (Reset 0)</button>
         </div>
+    </div>
+    </div>
+
+    <!-- Hidden Printable Receipt Container -->
+    <div id="printable-receipt">
+        <h3 style="margin:5px 0 0 0;">JAVEROIN WIFI</h3>
+        <div style="font-size:10px;">--------------------------------</div>
+        <div id="printTitle" style="font-weight:bold; margin:5px 0;">OFFICIAL VOUCHER</div>
+        <div style="font-size:10px;">--------------------------------</div>
+        <div style="text-align:left; margin: 10px 0 10px 10px; font-size:12px;">
+            <div>PLAN : <span id="printPlan"></span></div>
+            <div>PRICE : <span id="printPrice"></span></div>
+            <div>TIME : <span id="printTime"></span></div>
+        </div>
+        <div style="font-weight:bold; margin-top:10px;">VOUCHER CODE:</div>
+        <h2 id="printCode" style="font-size:24px; margin: 5px 0 10px 0; border:2px solid #000; padding:5px;"></h2>
+        <div style="font-size:10px;">--------------------------------</div>
+        <div style="font-size:10px; margin-top:5px;">Powered by Javeroin Systems</div>
     </div>
 
     <nav class="nav-bar">
@@ -459,14 +504,30 @@
             const confirmMsg = isSold ? `RE-PRINT Sold ${plan} voucher?` : `Sell ${plan} voucher?`;
             if (!confirm(confirmMsg)) return;
 
+            // Determine sold time
             let soldTime = time;
             if (!isSold) {
                 const now = new Date();
                 soldTime = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ", " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             }
 
-            const printData = `\x1ba\x01JAVEROIN WIFI\n--------------------------------\n${isSold ? "DUPLICATE RECEIPT" : "OFFICIAL VOUCHER"}\n--------------------------------\n\x1ba\x00PLAN  : ${plan}\nPRICE : ${parseInt(amount).toLocaleString()} UGX\nTIME  : ${soldTime}\n\nVOUCHER CODE:\n\x1b!\x38${code}\n\x1b!\x00\n--------------------------------\n\x1ba\x01Powered by Javeroin Systems\n\n\n`;
-            window.location.href = "rawbt:base64," + btoa(printData);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+
+            if (isAndroid) {
+                // Use RawBT scheme for Android
+                const printData = `\x1ba\x01JAVEROIN WIFI\n--------------------------------\n${isSold ? "DUPLICATE RECEIPT" : "OFFICIAL VOUCHER"}\n--------------------------------\n\x1ba\x00PLAN  : ${plan}\nPRICE : ${parseInt(amount).toLocaleString()} UGX\nTIME  : ${soldTime}\n\nVOUCHER CODE:\n\x1b!\x38${code}\n\x1b!\x00\n--------------------------------\n\x1ba\x01Powered by Javeroin Systems\n\n\n`;
+                window.location.href = "rawbt:base64," + btoa(printData);
+            } else {
+                // Use window.print() for iOS/Desktop
+                document.getElementById('printTitle').innerText = isSold ? "DUPLICATE RECEIPT" : "OFFICIAL VOUCHER";
+                document.getElementById('printPlan').innerText = plan;
+                document.getElementById('printPrice').innerText = parseInt(amount).toLocaleString() + " UGX";
+                document.getElementById('printTime').innerText = soldTime;
+                document.getElementById('printCode').innerText = code;
+
+                // Allow UI to update before printing
+                setTimeout(() => window.print(), 300);
+            }
 
             if (!isSold) db.ref('/' + key).update({ printed: true, soldAt: soldTime, soldTimestamp: firebase.database.ServerValue.TIMESTAMP });
         }
