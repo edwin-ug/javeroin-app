@@ -5,10 +5,13 @@
     <meta charset="UTF-8">
     <title>Javeroin Business POS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap"
+        rel="stylesheet">
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -21,82 +24,249 @@
             --danger: #ef4444;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; color: var(--text-main); }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding-bottom: 80px;
+            color: var(--text-main);
+        }
 
         .app-header {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white; padding: 20px 20px 40px 20px; text-align: center;
-            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+            color: white;
+            padding: 20px 20px 40px 20px;
+            text-align: center;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
         }
 
         .stats-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-            width: 90%; max-width: 400px; margin: -25px auto 20px auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 90%;
+            max-width: 400px;
+            margin: -25px auto 20px auto;
         }
 
         .stat-card {
-            background: white; border-radius: 12px; padding: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); text-align: center;
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
         }
 
-        .stat-label { font-size: 9px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; }
-        .stat-val { font-size: 18px; font-weight: 800; margin-top: 4px; }
-        .stock-alert { background: #fee2e2 !important; border: 2px solid var(--danger); animation: pulse 2s infinite; }
-        .stock-alert .stat-val { color: var(--danger); }
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-weight: 800;
+            text-transform: uppercase;
+        }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .stat-val {
+            font-size: 18px;
+            font-weight: 800;
+            margin-top: 4px;
+        }
 
-        .search-container { width: 90%; max-width: 400px; margin: 0 auto 15px auto; }
-        .search-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-size: 14px; }
-        
-        .list-container { width: 90%; max-width: 400px; margin: 0 auto; }
-        
+        .stock-alert {
+            background: #fee2e2 !important;
+            border: 2px solid var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        .stock-alert .stat-val {
+            color: var(--danger);
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .search-container {
+            width: 90%;
+            max-width: 400px;
+            margin: 0 auto 15px auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .list-container {
+            width: 90%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
         .voucher-card {
-            background: white; border-radius: 12px; margin-bottom: 10px;
-            display: flex; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        .color-strip { width: 6px; flex-shrink: 0; }
-        .card-content { flex-grow: 1; padding: 12px; }
-        .voucher-code { font-family: 'Roboto Mono', monospace; font-size: 17px; font-weight: 700; }
-        
-        .price-badge {
-            background: #ecfdf5; color: #047857; padding: 2px 6px;
-            border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 8px;
+        .color-strip {
+            width: 6px;
+            flex-shrink: 0;
         }
-        
-        .sold-time { font-size: 10px; color: var(--primary-dark); font-weight: 700; margin-top: 4px; }
+
+        .card-content {
+            flex-grow: 1;
+            padding: 12px;
+        }
+
+        .voucher-code {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .price-badge {
+            background: #ecfdf5;
+            color: #047857;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .sold-time {
+            font-size: 10px;
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin-top: 4px;
+        }
 
         .nav-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
-            background: white; display: flex; justify-content: space-around;
-            align-items: center; border-top: 1px solid #e5e7eb; z-index: 1000;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 65px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #e5e7eb;
+            z-index: 1000;
         }
 
         .nav-item {
-            border: none; background: none; color: var(--text-muted); font-size: 11px;
-            font-weight: 600; cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; gap: 4px;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
-        .nav-item.active { color: var(--primary-dark); }
-        .nav-icon-img { width: 20px; height: 20px; object-fit: contain; }
 
-        .page { display: none; }
-        .page.active { display: block; }
+        .nav-item.active {
+            color: var(--primary-dark);
+        }
 
-        .btn-report { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: 800; margin-top: 20px; }
-        .btn-reset { width: 100%; padding: 15px; background: white; color: var(--danger); border: 2px solid var(--danger); border-radius: 10px; font-weight: 800; margin-top: 10px; }
-        .is-printed { opacity: 0.6; background: #f8fafc; }
+        .nav-icon-img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .btn-report {
+            width: 100%;
+            padding: 15px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 800;
+            margin-top: 20px;
+        }
+
+        .btn-reset {
+            width: 100%;
+            padding: 15px;
+            background: white;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+            border-radius: 10px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        .is-printed {
+            opacity: 0.6;
+            background: #f8fafc;
+        }
 
         /* Print Styling */
-        #printable-receipt { display: none; font-family: 'Roboto Mono', monospace; width: 300px; padding: 10px; text-align: center; }
-        
+        #printable-receipt {
+            display: none;
+            font-family: 'Roboto Mono', monospace;
+            width: 300px;
+            padding: 10px;
+            text-align: center;
+        }
+
         @media print {
-            body * { visibility: hidden; }
-            #printable-receipt, #printable-receipt * { visibility: visible; }
-            #printable-receipt { display: block; position: absolute; left: 0; top: 0; width: 100%; margin: 0; }
-            @page { margin: 0; size: 58mm auto; }
+            body * {
+                visibility: hidden;
+            }
+
+            #printable-receipt,
+            #printable-receipt * {
+                visibility: visible;
+            }
+
+            #printable-receipt {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+            }
+
+            @page {
+                margin: 0;
+                size: 58mm auto;
+            }
         }
     </style>
 </head>
@@ -120,7 +290,8 @@
             </div>
         </div>
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" onkeyup="filterList('storeList', this.value)" placeholder="Find available code...">
+            <input type="text" id="searchInput" class="search-input" onkeyup="filterList('storeList', this.value)"
+                placeholder="Find available code...">
         </div>
         <div id="storeList" class="list-container"></div>
     </div>
@@ -128,16 +299,48 @@
     <div id="pageHistory" class="page">
         <div style="padding: 20px; text-align: center;">
             <h2 style="margin: 0; font-size: 16px;">Sales History</h2>
-            <p style="font-size: 12px; color: var(--text-muted);">All printed vouchers</p>
+            <p style="font-size: 12px; color: var(--text-muted);">Current Shift Vouchers</p>
         </div>
         <div class="search-container">
-            <input type="text" class="search-input" onkeyup="filterList('historyList', this.value)" placeholder="Find a sold code...">
+            <input type="text" class="search-input" onkeyup="filterList('historyList', this.value)"
+                placeholder="Find a sold code...">
         </div>
         <div id="historyList" class="list-container"></div>
         <div class="list-container">
             <button class="btn-report" onclick="downloadReport()">Export CSV Report</button>
             <button class="btn-reset" onclick="resetSales()">Start New Shift (Reset 0)</button>
         </div>
+    </div>
+
+    <div id="pageReports" class="page">
+        <div style="padding: 20px; text-align: center;">
+            <h2 style="margin: 0; font-size: 16px;">Performance Reports</h2>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">All-Time Revenue</div>
+                <div class="stat-val" id="allTimeSales" style="color:var(--primary-dark)">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Vouchers</div>
+                <div class="stat-val" id="allTimeCount">0</div>
+            </div>
+        </div>
+
+        <div
+            style="width: 90%; max-width: 400px; margin: 15px auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3 style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-muted); text-align: center;">Last 7 Days
+                Performance</h3>
+            <canvas id="weeklyChart" height="200"></canvas>
+        </div>
+
+        <div style="padding: 0 20px 10px 20px;">
+            <h3 style="font-size: 14px; color: var(--text-main); border-bottom: 2px solid #ddd; padding-bottom: 5px;">
+                Past Shifts (Archived Sales)</h3>
+        </div>
+
+        <div id="pastSalesList" class="list-container"></div>
     </div>
 
     <div id="printable-receipt">
@@ -158,10 +361,15 @@
 
     <nav class="nav-bar">
         <button class="nav-item active" onclick="showPage('pageStore', this)">
-            <img src="store.png" class="nav-icon-img" alt="Store"><span>Store</span>
+            <img src="store.png" class="nav-icon-img" alt="Store" onerror="this.style.display='none'"><span>Store</span>
         </button>
         <button class="nav-item" onclick="showPage('pageHistory', this)">
-            <img src="history.png" class="nav-icon-img" alt="History"><span>History</span>
+            <img src="history.png" class="nav-icon-img" alt="History"
+                onerror="this.style.display='none'"><span>History</span>
+        </button>
+        <button class="nav-item" onclick="showPage('pageReports', this)">
+            <img src="invoice.png" class="nav-icon-img" alt="Reports"
+                onerror="this.style.display='none'"><span>Reports</span>
         </button>
     </nav>
 
@@ -179,29 +387,24 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        
-        // Listen to the ROOT so we can get both "globalResetTime" and "vouchers"
         const rootRef = db.ref('/');
 
         let masterData = [];
+        let currentResetTime = 0;
+        let salesChart = null; // Chart variable at the TOP of the script
+
         const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         document.getElementById('headerDate').innerText = today;
-        let currentResetTime = 0;
 
         rootRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
 
-            // 1. Get the Reset Time
             currentResetTime = data.globalResetTime || 0;
+            const voucherObj = data.vouchers || {};
 
-            // 2. Get the Vouchers (Checking the "vouchers" folder specifically)
-            const voucherObj = data.vouchers || {}; 
-            
-            // 3. Convert Object to Array for the display logic
             masterData = [];
             Object.entries(voucherObj).forEach(([key, val]) => {
-                // Combine the Firebase Key (e.g. "PBGQ6W") into the object
                 masterData.push({ ...val, firebaseKey: key });
             });
 
@@ -211,49 +414,143 @@
         function renderAll() {
             const storeDiv = document.getElementById('storeList');
             const historyDiv = document.getElementById('historyList');
+            const pastSalesDiv = document.getElementById('pastSalesList');
             const stockCard = document.getElementById('stockCard');
-            let stock = 0, sales = 0;
+
+            let stock = 0, currentShiftSales = 0;
+            let allTimeRevenue = 0, allTimeCount = 0;
 
             let storeHtml = "";
             let historyItems = [];
+            let pastSalesItems = [];
+
+            let chartDataMap = {};
 
             masterData.forEach((v) => {
                 if (!v || !v.code) return;
-                
-                // Determine if Sold
+
                 const isSold = v.printed === true || v.printed === "true";
-                
-                // Determine Sale Time
                 const saleTime = v.soldTimestamp ? v.soldTimestamp : parseSoldDate(v.soldAt);
                 const buffer = v.soldTimestamp ? 0 : 60000;
 
-                // LOGIC: Is it sold AFTER the last reset?
-                if (isSold && (saleTime + buffer) > currentResetTime) {
-                    historyItems.push(v);
-                    sales += parseInt(v.amount || 0);
-                } 
-                // LOGIC: Is it Unsold? (Show in store)
-                else if (!isSold) {
+                if (isSold) {
+                    allTimeRevenue += parseInt(v.amount || 0);
+                    allTimeCount++;
+
+                    let dateKey = "Unknown";
+                    if (v.soldAt && v.soldAt.includes(',')) {
+                        dateKey = v.soldAt.split(',')[0].trim();
+                    } else if (v.soldTimestamp) {
+                        dateKey = new Date(v.soldTimestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                    } else if (v.soldAt) {
+                        dateKey = v.soldAt;
+                    }
+
+                    if (!chartDataMap[dateKey]) chartDataMap[dateKey] = 0;
+                    chartDataMap[dateKey] += parseInt(v.amount || 0);
+
+                    if ((saleTime + buffer) > currentResetTime) {
+                        historyItems.push(v);
+                        currentShiftSales += parseInt(v.amount || 0);
+                    } else {
+                        pastSalesItems.push(v);
+                    }
+                } else {
                     storeHtml += createCardHtml(v, false);
                     stock++;
                 }
             });
 
-            // Sort history: newest sold first
             historyItems.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
-            
-            // Generate History HTML
+            pastSalesItems.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
+
             let historyHtml = "";
-            historyItems.forEach(v => {
-                historyHtml += createCardHtml(v, true);
-            });
+            historyItems.forEach(v => historyHtml += createCardHtml(v, true));
+
+            let pastSalesHtml = "";
+            if (pastSalesItems.length === 0) {
+                pastSalesHtml = "<p style='text-align:center; font-size:12px; color:#888;'>No past sales found.</p>";
+            } else {
+                let groupKeys = [];
+                let groups = {};
+
+                pastSalesItems.forEach(v => {
+                    let dateKey = v.soldAt && v.soldAt.includes(',') ? v.soldAt.split(',')[0].trim() :
+                        (v.soldTimestamp ? new Date(v.soldTimestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : v.soldAt);
+
+                    if (!groups[dateKey]) {
+                        groups[dateKey] = { itemsHtml: "", totalRev: 0, count: 0 };
+                        groupKeys.push(dateKey);
+                    }
+                    groups[dateKey].itemsHtml += createCardHtml(v, true);
+                    groups[dateKey].totalRev += parseInt(v.amount || 0);
+                    groups[dateKey].count++;
+                });
+
+                groupKeys.forEach(date => {
+                    let g = groups[date];
+                    pastSalesHtml += `
+                    <div style="background: #e2e8f0; padding: 8px 15px; border-radius: 8px; margin: 20px 0 10px 0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <span style="font-weight: 800; font-size: 13px; color: #334155;">  ${date}</span>
+                        <span style="font-weight: 800; font-size: 13px; color: var(--primary-dark);">${g.totalRev.toLocaleString()} UGX <span style="font-size:10px; color:#64748b; font-weight:600;">(${g.count})</span></span>
+                    </div>
+                    ${g.itemsHtml}`;
+                });
+            }
 
             storeDiv.innerHTML = storeHtml;
             historyDiv.innerHTML = historyHtml;
+            pastSalesDiv.innerHTML = pastSalesHtml;
 
             document.getElementById('stockCount').innerText = stock;
             stockCard.className = (stock < 10 && stock > 0) ? "stat-card stock-alert" : "stat-card";
-            document.getElementById('todaySales').innerText = sales.toLocaleString() + " /=";
+            document.getElementById('todaySales').innerText = currentShiftSales.toLocaleString() + " /=";
+            document.getElementById('allTimeSales').innerText = allTimeRevenue.toLocaleString() + " /=";
+            document.getElementById('allTimeCount').innerText = allTimeCount;
+
+            renderChart(chartDataMap);
+        }
+
+        function renderChart(dataMap) {
+            const ctx = document.getElementById('weeklyChart');
+            if (!ctx) return;
+
+            const labels = [];
+            const data = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                labels.push(dateStr);
+                data.push(dataMap[dateStr] || 0);
+            }
+
+            if (salesChart) {
+                salesChart.data.labels = labels;
+                salesChart.data.datasets[0].data = data;
+                salesChart.update();
+            } else {
+                salesChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Revenue (UGX)',
+                            data: data,
+                            backgroundColor: '#06b6d4',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                            x: { ticks: { font: { size: 10 } } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
         }
 
         function createCardHtml(v, isSold) {
@@ -286,12 +583,10 @@
                 soldTime = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ", " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             }
 
-            // ANDROID RAWBT PRINTING
             if (/android/i.test(navigator.userAgent)) {
                 const printData = `\x1ba\x01JAVEROIN WIFI\n--------------------------------\n${isSold ? "DUPLICATE RECEIPT" : "OFFICIAL VOUCHER"}\n--------------------------------\n\x1ba\x00PLAN  : ${plan}\nPRICE : ${parseInt(amount).toLocaleString()} UGX\nTIME  : ${soldTime}\n\nVOUCHER CODE:\n\x1b!\x38${code}\n\x1b!\x00\n--------------------------------\n\x1ba\x01Powered by Javeroin Systems\n\n\n`;
                 window.location.href = "rawbt:base64," + btoa(printData);
             } else {
-                // BROWSER / IOS PRINTING
                 document.getElementById('printTitle').innerText = isSold ? "DUPLICATE RECEIPT" : "OFFICIAL VOUCHER";
                 document.getElementById('printPlan').innerText = plan;
                 document.getElementById('printPrice').innerText = parseInt(amount).toLocaleString() + " UGX";
@@ -300,12 +595,11 @@
                 setTimeout(() => window.print(), 300);
             }
 
-            // CRITICAL FIX: Update the specific voucher in the "vouchers" folder
             if (!isSold) {
-                db.ref('vouchers/' + key).update({ 
-                    printed: true, 
-                    soldAt: soldTime, 
-                    soldTimestamp: firebase.database.ServerValue.TIMESTAMP 
+                db.ref('vouchers/' + key).update({
+                    printed: true,
+                    soldAt: soldTime,
+                    soldTimestamp: firebase.database.ServerValue.TIMESTAMP
                 });
             }
         }
@@ -319,9 +613,9 @@
         function parseSoldDate(dateStr) {
             if (!dateStr) return 0;
             try {
-                const parts = dateStr.split(' '); 
-                return 0; 
-            } catch(e) { return 0; }
+                const parts = dateStr.split(' ');
+                return 0;
+            } catch (e) { return 0; }
         }
 
         function getPlanColor(plan) {
@@ -349,9 +643,9 @@
         }
 
         function downloadReport() {
-            let csv = "Code,Plan,Amount,Sold At\n";
             alert("Report feature available! (Requires data reprocessing)");
         }
     </script>
 </body>
+
 </html>
