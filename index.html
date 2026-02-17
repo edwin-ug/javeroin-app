@@ -5,9 +5,7 @@
     <meta charset="UTF-8">
     <title>Javeroin Business POS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -87,17 +85,9 @@
         }
 
         @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
-
-            100% {
-                opacity: 1;
-            }
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
         }
 
         .search-container {
@@ -335,7 +325,6 @@
             <canvas id="weeklyChart" height="200"></canvas>
         </div>
 
-
         <div id="pastSalesList" class="list-container"></div>
     </div>
 
@@ -539,9 +528,17 @@
                     },
                     options: {
                         responsive: true,
+                        animation: false, // Prevents chart bounce/animation on load
                         scales: {
-                            y: { beginAtZero: true, ticks: { font: { size: 10 } } },
-                            x: { ticks: { font: { size: 10 } } }
+                            y: { 
+                                beginAtZero: true, 
+                                ticks: { font: { size: 10 } },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' } // Faint horizontal lines
+                            },
+                            x: { 
+                                ticks: { font: { size: 10 } },
+                                grid: { display: false } // Completely removes vertical lines
+                            }
                         },
                         plugins: { legend: { display: false } }
                     }
