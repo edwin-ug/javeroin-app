@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -35,6 +36,82 @@
             color: var(--text-main);
         }
 
+        /* --- NEW LOGIN STYLES --- */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .login-box h2 {
+            margin: 0 0 5px 0;
+            color: var(--text-main);
+            font-weight: 800;
+        }
+
+        .login-box p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 25px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        /* ------------------------ */
+
         .app-header {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
@@ -42,6 +119,7 @@
             text-align: center;
             border-bottom-left-radius: 20px;
             border-bottom-right-radius: 20px;
+            position: relative;
         }
 
         .stats-grid {
@@ -263,102 +341,114 @@
 
 <body>
 
-    <div class="app-header">
-        <h1 style="font-size: 18px; margin: 0;">Javeroin Seller</h1>
-        <div id="headerDate" style="font-size: 11px; opacity: 0.8; font-weight: 600;">...</div>
-    </div>
-
-    <div id="pageStore" class="page active">
-        <div class="stats-grid">
-            <div class="stat-card" id="stockCard">
-                <div class="stat-label">In Stock</div>
-                <div class="stat-val" id="stockCount">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Total Sold</div>
-                <div class="stat-val" id="todaySales" style="color:var(--success)">0</div>
-            </div>
-        </div>
-        <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" onkeyup="filterList('storeList', this.value)"
-                placeholder="Find available code...">
-        </div>
-        <div id="storeList" class="list-container"></div>
-    </div>
-
-    <div id="pageHistory" class="page">
-        <div style="padding: 20px; text-align: center;">
-            <h2 style="margin: 0; font-size: 16px;">Sales History</h2>
-            <p style="font-size: 12px; color: var(--text-muted);">Current Shift Vouchers</p>
-        </div>
-        <div class="search-container">
-            <input type="text" class="search-input" onkeyup="filterList('historyList', this.value)"
-                placeholder="Find a sold code...">
-        </div>
-        <div id="historyList" class="list-container"></div>
-        <div class="list-container">
-            <button class="btn-report" onclick="downloadReport()">Export CSV Report</button>
-            <button class="btn-reset" onclick="resetSales()">Start New Shift (Reset 0)</button>
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <h2>Javeroin Seller</h2>
+            <p>Sign in to access the dashboard</p>
+            <input type="email" id="emailInput" placeholder="Email Address">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button class="login-btn" onclick="loginUser()">LOGIN</button>
+            <p id="errorMsg" style="color: var(--danger); font-weight: bold; display: none; margin-top: 15px;"></p>
         </div>
     </div>
 
-    <div id="pageReports" class="page">
-        <div style="padding: 20px; text-align: center; margin-bottom: 20px;">
-            <h2 style="margin: 0; font-size: 16px;">Performance Reports</h2>
+    <div id="mainApp" style="display: none;">
+        <div class="app-header">
+            <h1 style="font-size: 18px; margin: 0;">Javeroin Seller</h1>
+            <div id="headerDate" style="font-size: 11px; opacity: 0.8; font-weight: 600;">...</div>
+            <button class="logout-btn" onclick="logoutUser()">Logout</button>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">All-Time Revenue</div>
-                <div class="stat-val" id="allTimeSales" style="color:var(--primary-dark)">0</div>
+        <div id="pageStore" class="page active">
+            <div class="stats-grid">
+                <div class="stat-card" id="stockCard">
+                    <div class="stat-label">In Stock</div>
+                    <div class="stat-val" id="stockCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Sold</div>
+                    <div class="stat-val" id="todaySales" style="color:var(--success)">0</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">Total Vouchers</div>
-                <div class="stat-val" id="allTimeCount">0</div>
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" onkeyup="filterList('storeList', this.value)"
+                    placeholder="Find available code...">
+            </div>
+            <div id="storeList" class="list-container"></div>
+        </div>
+
+        <div id="pageHistory" class="page">
+            <div style="padding: 20px; text-align: center;">
+                <h2 style="margin: 0; font-size: 16px;">Sales History</h2>
+                <p style="font-size: 12px; color: var(--text-muted);">Current Shift Vouchers</p>
+            </div>
+            <div class="search-container">
+                <input type="text" class="search-input" onkeyup="filterList('historyList', this.value)"
+                    placeholder="Find a sold code...">
+            </div>
+            <div id="historyList" class="list-container"></div>
+            <div class="list-container">
+                <button class="btn-report" onclick="downloadReport()">Export CSV Report</button>
+                <button class="btn-reset" onclick="resetSales()">Start New Shift (Reset 0)</button>
             </div>
         </div>
 
-        <div
-            style="width: 90%; max-width: 400px; margin: 15px auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-            <h3 style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-muted); text-align: center;">Last 7 Days
-                Performance</h3>
-            <canvas id="weeklyChart" height="200"></canvas>
+        <div id="pageReports" class="page">
+            <div style="padding: 20px; text-align: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 16px;">Performance Reports</h2>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">All-Time Revenue</div>
+                    <div class="stat-val" id="allTimeSales" style="color:var(--primary-dark)">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Vouchers</div>
+                    <div class="stat-val" id="allTimeCount">0</div>
+                </div>
+            </div>
+
+            <div
+                style="width: 90%; max-width: 400px; margin: 15px auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-muted); text-align: center;">Last 7 Days
+                    Performance</h3>
+                <canvas id="weeklyChart" height="200"></canvas>
+            </div>
+
+            <div id="pastSalesList" class="list-container"></div>
         </div>
 
-        <div id="pastSalesList" class="list-container"></div>
-    </div>
-
-    <div id="printable-receipt">
-        <h3 style="margin:5px 0 0 0;">JAVEROIN WIFI</h3>
-        <div style="font-size:10px;">--------------------------------</div>
-        <div id="printTitle" style="font-weight:bold; margin:5px 0;">OFFICIAL VOUCHER</div>
-        <div style="font-size:10px;">--------------------------------</div>
-        <div style="text-align:left; margin: 10px 0 10px 10px; font-size:12px;">
-            <div>PLAN : <span id="printPlan"></span></div>
-            <div>PRICE : <span id="printPrice"></span></div>
-            <div>TIME : <span id="printTime"></span></div>
+        <div id="printable-receipt">
+            <h3 style="margin:5px 0 0 0;">JAVEROIN WIFI</h3>
+            <div style="font-size:10px;">--------------------------------</div>
+            <div id="printTitle" style="font-weight:bold; margin:5px 0;">OFFICIAL VOUCHER</div>
+            <div style="font-size:10px;">--------------------------------</div>
+            <div style="text-align:left; margin: 10px 0 10px 10px; font-size:12px;">
+                <div>PLAN : <span id="printPlan"></span></div>
+                <div>PRICE : <span id="printPrice"></span></div>
+                <div>TIME : <span id="printTime"></span></div>
+            </div>
+            <div style="font-weight:bold; margin-top:10px;">VOUCHER CODE:</div>
+            <h2 id="printCode" style="font-size:24px; margin: 5px 0 10px 0; border:2px solid #000; padding:5px;"></h2>
+            <div style="font-size:10px;">--------------------------------</div>
+            <div style="font-size:10px; margin-top:5px;">Powered by Javeroin Systems</div>
         </div>
-        <div style="font-weight:bold; margin-top:10px;">VOUCHER CODE:</div>
-        <h2 id="printCode" style="font-size:24px; margin: 5px 0 10px 0; border:2px solid #000; padding:5px;"></h2>
-        <div style="font-size:10px;">--------------------------------</div>
-        <div style="font-size:10px; margin-top:5px;">Powered by Javeroin Systems</div>
-    </div>
 
-    <nav class="nav-bar">
-        <button class="nav-item active" onclick="showPage('pageStore', this)">
-            <img src="store.png" class="nav-icon-img" alt="Store" onerror="this.style.display='none'"><span>Store</span>
-        </button>
-        <button class="nav-item" onclick="showPage('pageHistory', this)">
-            <img src="history.png" class="nav-icon-img" alt="History"
-                onerror="this.style.display='none'"><span>History</span>
-        </button>
-        <button class="nav-item" onclick="showPage('pageReports', this)">
-            <img src="invoice.png" class="nav-icon-img" alt="Reports"
-                onerror="this.style.display='none'"><span>Reports</span>
-        </button>
-    </nav>
-
-    <script>
+        <nav class="nav-bar">
+            <button class="nav-item active" onclick="showPage('pageStore', this)">
+                <img src="store.png" class="nav-icon-img" alt="Store" onerror="this.style.display='none'"><span>Store</span>
+            </button>
+            <button class="nav-item" onclick="showPage('pageHistory', this)">
+                <img src="history.png" class="nav-icon-img" alt="History"
+                    onerror="this.style.display='none'"><span>History</span>
+            </button>
+            <button class="nav-item" onclick="showPage('pageReports', this)">
+                <img src="invoice.png" class="nav-icon-img" alt="Reports"
+                    onerror="this.style.display='none'"><span>Reports</span>
+            </button>
+        </nav>
+    </div> <script>
         const firebaseConfig = {
             apiKey: "AIzaSyD9L328Bp8Enor5DPeBNwtlIG3MBNLKMTs",
             authDomain: "javeroin-db.firebaseapp.com",
@@ -371,30 +461,75 @@
         };
 
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.database();
         const rootRef = db.ref('/');
 
         let masterData = [];
         let currentResetTime = 0;
-        let salesChart = null; // Chart variable at the TOP of the script
+        let salesChart = null; 
 
         const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         document.getElementById('headerDate').innerText = today;
 
-        rootRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-
-            currentResetTime = data.globalResetTime || 0;
-            const voucherObj = data.vouchers || {};
-
-            masterData = [];
-            Object.entries(voucherObj).forEach(([key, val]) => {
-                masterData.push({ ...val, firebaseKey: key });
-            });
-
-            renderAll();
+        // --- AUTHENTICATION LOGIC ---
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is logged in! Hide login, show dashboard.
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                
+                // ONLY connect to database AFTER login is confirmed
+                attachDatabaseListener();
+            } else {
+                // User is logged out. Show login, hide dashboard.
+                document.getElementById('loginPage').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
+                
+                // Detach database listener to prevent errors
+                rootRef.off();
+            }
         });
+
+        function loginUser() {
+            const email = document.getElementById('emailInput').value;
+            const pass = document.getElementById('passwordInput').value;
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.style.display = 'none';
+
+            if(!email || !pass) {
+                errorMsg.innerText = "Please enter both email and password.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(email, pass).catch((error) => {
+                errorMsg.innerText = error.message;
+                errorMsg.style.display = 'block';
+            });
+        }
+
+        function logoutUser() {
+            auth.signOut();
+        }
+        // ----------------------------
+
+        function attachDatabaseListener() {
+            rootRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                currentResetTime = data.globalResetTime || 0;
+                const voucherObj = data.vouchers || {};
+
+                masterData = [];
+                Object.entries(voucherObj).forEach(([key, val]) => {
+                    masterData.push({ ...val, firebaseKey: key });
+                });
+
+                renderAll();
+            });
+        }
 
         function renderAll() {
             const storeDiv = document.getElementById('storeList');
@@ -528,16 +663,16 @@
                     },
                     options: {
                         responsive: true,
-                        animation: false, // Prevents chart bounce/animation on load
+                        animation: false, 
                         scales: {
                             y: { 
                                 beginAtZero: true, 
                                 ticks: { font: { size: 10 } },
-                                grid: { color: 'rgba(0, 0, 0, 0.05)' } // Faint horizontal lines
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' } 
                             },
                             x: { 
                                 ticks: { font: { size: 10 } },
-                                grid: { display: false } // Completely removes vertical lines
+                                grid: { display: false } 
                             }
                         },
                         plugins: { legend: { display: false } }
@@ -640,5 +775,4 @@
         }
     </script>
 </body>
-
 </html>
