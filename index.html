@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Javeroin Business POS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="icon" type="image/png" href="icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -666,9 +667,13 @@
                     if (!dailyDataMap[dailyKey]) dailyDataMap[dailyKey] = 0;
                     dailyDataMap[dailyKey] += amount;
 
-                    // Monthly key: "Jun 2025"
+                    // Monthly key: Billing Cycle Month (20th to 19th)
                     if (saleDate && !isNaN(saleDate)) {
-                        const monthKey = saleDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+                        let billingDate = new Date(saleDate.getTime());
+                        if (billingDate.getDate() >= 20) {
+                            billingDate.setMonth(billingDate.getMonth() + 1);
+                        }
+                        const monthKey = billingDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
                         if (!monthlyDataMap[monthKey]) monthlyDataMap[monthKey] = 0;
                         monthlyDataMap[monthKey] += amount;
 
@@ -786,10 +791,20 @@
             const labels = [];
             const data = [];
             const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            
+            const today = new Date();
+            let currentBillingMonth = today.getMonth();
+            let currentBillingYear = today.getFullYear();
+            if (today.getDate() >= 20) {
+                currentBillingMonth++;
+                if (currentBillingMonth > 11) {
+                    currentBillingMonth = 0;
+                    currentBillingYear++;
+                }
+            }
+
             for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(1);
-                d.setMonth(d.getMonth() - i);
+                const d = new Date(currentBillingYear, currentBillingMonth - i, 1);
                 const monthKey = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
                 const shortLabel = monthNames[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
                 labels.push(shortLabel);
