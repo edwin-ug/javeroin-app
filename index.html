@@ -359,8 +359,12 @@
         }
 
         .is-printed {
-            opacity: 0.6;
             background: #f8fafc;
+        }
+
+        .sold-strike {
+            text-decoration: line-through;
+            color: #9ca3af;
         }
 
         /* Print Styling */
@@ -683,7 +687,7 @@
                         pastSalesItems.push(v);
                     }
                 } else {
-                    storeHtml += createCardHtml(v, false);
+                    storeHtml += createCardHtml(v, false, true);
                     stock++;
                 }
             });
@@ -695,7 +699,7 @@
             pastSalesItems.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
 
             let historyHtml = "";
-            historyItems.forEach(v => historyHtml += createCardHtml(v, true));
+            historyItems.forEach(v => historyHtml += createCardHtml(v, true, true));
 
             let pastSalesHtml = "";
             if (pastSalesItems.length === 0) {
@@ -712,7 +716,7 @@
                         groups[dateKey] = { itemsHtml: "", totalRev: 0, count: 0 };
                         groupKeys.push(dateKey);
                     }
-                    groups[dateKey].itemsHtml += createCardHtml(v, true);
+                    groups[dateKey].itemsHtml += createCardHtml(v, true, false);
                     groups[dateKey].totalRev += parseInt(v.amount || 0);
                     groups[dateKey].count++;
                 });
@@ -836,16 +840,12 @@
             }
         }
 
-        function createCardHtml(v, isSold) {
-            return `
-            <div class="swipe-container" data-key="${v.firebaseKey}" data-code="${v.code}">
-                <div class="delete-bg">
-                    <span>DELETE</span>
-                </div>
+        function createCardHtml(v, isSold, allowDelete = false) {
+            const cardInnerHtml = `
                 <div class="voucher-card ${isSold ? 'is-printed' : ''}">
                     <div class="color-strip" style="background: ${getPlanColor(v.plan)}"></div>
                     <div class="card-content">
-                        <div class="voucher-code">${v.code}</div>
+                        <div class="voucher-code ${isSold ? 'sold-strike' : ''}">${v.code}</div>
                         <div class="voucher-details">
                             <span>${v.plan}</span><span class="price-badge">${parseInt(v.amount).toLocaleString()} UGX</span>
                         </div>
@@ -857,8 +857,22 @@
                             <img src="invoice.png" style="width:28px;" onerror="this.src='printer.png'">
                         </button>
                     </div>
-                </div>
-            </div>`;
+                </div>`;
+
+            if (allowDelete) {
+                return `
+                <div class="swipe-container" data-key="${v.firebaseKey}" data-code="${v.code}">
+                    <div class="delete-bg">
+                        <span>DELETE</span>
+                    </div>
+                    ${cardInnerHtml}
+                </div>`;
+            } else {
+                return `
+                <div style="margin-bottom: 10px;" data-key="${v.firebaseKey}" data-code="${v.code}">
+                    ${cardInnerHtml}
+                </div>`;
+            }
         }
 
         function handlePrint(key, code, plan, amount, isSold, time) {
@@ -923,7 +937,8 @@
 
         function filterList(listId, val) {
             const search = val.toUpperCase();
-            const cards = document.getElementById(listId).getElementsByClassName('swipe-container');
+            const listEl = document.getElementById(listId);
+            const cards = listEl.querySelectorAll(listId === 'pastSalesList' ? 'div[data-key]' : '.swipe-container');
             for (let card of cards) {
                 const code = card.querySelector('.voucher-code').innerText;
                 card.style.display = code.includes(search) ? "" : "none";
