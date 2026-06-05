@@ -301,6 +301,36 @@
             margin-top: 10px;
         }
 
+        /* Chart Toggle */
+        .chart-toggle {
+            display: flex;
+            background: #e5e7eb;
+            border-radius: 8px;
+            padding: 3px;
+            gap: 3px;
+            margin-bottom: 12px;
+        }
+
+        .chart-toggle-btn {
+            flex: 1;
+            padding: 7px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .chart-toggle-btn.active {
+            background: white;
+            color: var(--primary-dark);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        }
+
         .is-printed {
             opacity: 0.6;
             background: #f8fafc;
@@ -397,25 +427,28 @@
         </div>
 
         <div id="pageReports" class="page">
-            <div style="padding: 20px; text-align: center; margin-bottom: 20px;">
+            <div style="padding: 20px; text-align: center; margin-bottom: 10px;">
                 <h2 style="margin: 0; font-size: 16px;">Performance Reports</h2>
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">All-Time Revenue</div>
-                    <div class="stat-val" id="allTimeSales" style="color:var(--primary-dark)">0</div>
+                    <div class="stat-label">Monthly Total</div>
+                    <div class="stat-val" id="monthlySalesVal" style="color:var(--primary-dark)">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Total Vouchers</div>
-                    <div class="stat-val" id="allTimeCount">0</div>
+                    <div class="stat-label">Monthly Vouchers</div>
+                    <div class="stat-val" id="monthlyCountVal">0</div>
                 </div>
             </div>
 
             <div
                 style="width: 90%; max-width: 400px; margin: 15px auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h3 style="margin: 0 0 10px 0; font-size: 13px; color: var(--text-muted); text-align: center;">Last 7 Days
-                    Performance</h3>
+                <div class="chart-toggle">
+                    <button class="chart-toggle-btn active" id="toggleDays" onclick="setChartView('days')">Last 7 Days</button>
+                    <button class="chart-toggle-btn" id="toggleMonths" onclick="setChartView('months')">Last 7 Months</button>
+                </div>
+                <div id="chartTitle" style="font-size: 11px; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 700;">LAST 7 DAYS PERFORMANCE</div>
                 <canvas id="weeklyChart" height="200"></canvas>
             </div>
 
@@ -470,7 +503,10 @@
 
         let masterData = [];
         let currentResetTime = 0;
-        let salesChart = null; 
+        let salesChart = null;
+        let chartView = 'days'; // 'days' or 'months'
+        let cachedDailyDataMap = {};
+        let cachedMonthlyDataMap = {};
 
         const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         document.getElementById('headerDate').innerText = today;
@@ -541,13 +577,19 @@
             const stockCard = document.getElementById('stockCard');
 
             let stock = 0, currentShiftSales = 0;
-            let allTimeRevenue = 0, allTimeCount = 0;
+            let monthlySales = 0, monthlyCount = 0;
 
             let storeHtml = "";
             let historyItems = [];
             let pastSalesItems = [];
 
-            let chartDataMap = {};
+            // Daily map (DD Mon) and Monthly map (Mon YYYY)
+            let dailyDataMap = {};
+            let monthlyDataMap = {};
+
+            const now = new Date();
+            const thisMonth = now.getMonth();
+            const thisYear = now.getFullYear();
 
             masterData.forEach((v) => {
                 if (!v || !v.code) return;
@@ -557,24 +599,48 @@
                 const buffer = v.soldTimestamp ? 0 : 60000;
 
                 if (isSold) {
-                    allTimeRevenue += parseInt(v.amount || 0);
-                    allTimeCount++;
+                    const amount = parseInt(v.amount || 0);
 
-                    let dateKey = "Unknown";
-                    if (v.soldAt && v.soldAt.includes(',')) {
-                        dateKey = v.soldAt.split(',')[0].trim();
-                    } else if (v.soldTimestamp) {
-                        dateKey = new Date(v.soldTimestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-                    } else if (v.soldAt) {
-                        dateKey = v.soldAt;
+                    // --- Build date keys ---
+                    let dailyKey = "Unknown";
+                    let saleDate = null;
+
+                    if (v.soldTimestamp) {
+                        saleDate = new Date(v.soldTimestamp);
+                    } else if (v.soldAt && v.soldAt.includes(',')) {
+                        // format: "05 Jun, 14:30" — parse date part
+                        const datePart = v.soldAt.split(',')[0].trim(); // "05 Jun"
+                        saleDate = new Date(datePart + ' ' + thisYear);
+                        if (isNaN(saleDate)) saleDate = null;
                     }
 
-                    if (!chartDataMap[dateKey]) chartDataMap[dateKey] = 0;
-                    chartDataMap[dateKey] += parseInt(v.amount || 0);
+                    if (saleDate && !isNaN(saleDate)) {
+                        dailyKey = saleDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                    } else if (v.soldAt && v.soldAt.includes(',')) {
+                        dailyKey = v.soldAt.split(',')[0].trim();
+                    } else if (v.soldAt) {
+                        dailyKey = v.soldAt;
+                    }
+
+                    if (!dailyDataMap[dailyKey]) dailyDataMap[dailyKey] = 0;
+                    dailyDataMap[dailyKey] += amount;
+
+                    // Monthly key: "Jun 2025"
+                    if (saleDate && !isNaN(saleDate)) {
+                        const monthKey = saleDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+                        if (!monthlyDataMap[monthKey]) monthlyDataMap[monthKey] = 0;
+                        monthlyDataMap[monthKey] += amount;
+
+                        // Monthly total = current calendar month
+                        if (saleDate.getMonth() === thisMonth && saleDate.getFullYear() === thisYear) {
+                            monthlySales += amount;
+                            monthlyCount++;
+                        }
+                    }
 
                     if ((saleTime + buffer) > currentResetTime) {
                         historyItems.push(v);
-                        currentShiftSales += parseInt(v.amount || 0);
+                        currentShiftSales += amount;
                     } else {
                         pastSalesItems.push(v);
                     }
@@ -583,6 +649,9 @@
                     stock++;
                 }
             });
+
+            cachedDailyDataMap = dailyDataMap;
+            cachedMonthlyDataMap = monthlyDataMap;
 
             historyItems.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
             pastSalesItems.sort((a, b) => (b.soldTimestamp || 0) - (a.soldTimestamp || 0));
@@ -628,13 +697,30 @@
             document.getElementById('stockCount').innerText = stock;
             stockCard.className = (stock < 10 && stock > 0) ? "stat-card stock-alert" : "stat-card";
             document.getElementById('todaySales').innerText = currentShiftSales.toLocaleString() + " /=";
-            document.getElementById('allTimeSales').innerText = allTimeRevenue.toLocaleString() + " /=";
-            document.getElementById('allTimeCount').innerText = allTimeCount;
+            document.getElementById('monthlySalesVal').innerText = monthlySales.toLocaleString() + " /=";
+            document.getElementById('monthlyCountVal').innerText = monthlyCount;
 
-            renderChart(chartDataMap);
+            renderChartForView();
         }
 
-        function renderChart(dataMap) {
+        function setChartView(view) {
+            chartView = view;
+            document.getElementById('toggleDays').classList.toggle('active', view === 'days');
+            document.getElementById('toggleMonths').classList.toggle('active', view === 'months');
+            document.getElementById('chartTitle').innerText =
+                view === 'days' ? 'LAST 7 DAYS PERFORMANCE' : 'LAST 7 MONTHS PERFORMANCE';
+            renderChartForView();
+        }
+
+        function renderChartForView() {
+            if (chartView === 'days') {
+                renderDailyChart(cachedDailyDataMap);
+            } else {
+                renderMonthlyChart(cachedMonthlyDataMap);
+            }
+        }
+
+        function renderDailyChart(dataMap) {
             const ctx = document.getElementById('weeklyChart');
             if (!ctx) return;
 
@@ -648,9 +734,37 @@
                 data.push(dataMap[dateStr] || 0);
             }
 
+            _drawChart(labels, data, '#06b6d4');
+        }
+
+        function renderMonthlyChart(dataMap) {
+            const ctx = document.getElementById('weeklyChart');
+            if (!ctx) return;
+
+            const labels = [];
+            const data = [];
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(1);
+                d.setMonth(d.getMonth() - i);
+                const monthKey = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+                const shortLabel = monthNames[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
+                labels.push(shortLabel);
+                data.push(dataMap[monthKey] || 0);
+            }
+
+            _drawChart(labels, data, '#0891b2');
+        }
+
+        function _drawChart(labels, data, color) {
+            const ctx = document.getElementById('weeklyChart');
+            if (!ctx) return;
+
             if (salesChart) {
                 salesChart.data.labels = labels;
                 salesChart.data.datasets[0].data = data;
+                salesChart.data.datasets[0].backgroundColor = color;
                 salesChart.update();
             } else {
                 salesChart = new Chart(ctx, {
@@ -660,22 +774,22 @@
                         datasets: [{
                             label: 'Revenue (UGX)',
                             data: data,
-                            backgroundColor: '#06b6d4',
+                            backgroundColor: color,
                             borderRadius: 4
                         }]
                     },
                     options: {
                         responsive: true,
-                        animation: false, 
+                        animation: { duration: 300 },
                         scales: {
-                            y: { 
-                                beginAtZero: true, 
+                            y: {
+                                beginAtZero: true,
                                 ticks: { font: { size: 10 } },
-                                grid: { color: 'rgba(0, 0, 0, 0.05)' } 
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
                             },
-                            x: { 
+                            x: {
                                 ticks: { font: { size: 10 } },
-                                grid: { display: false } 
+                                grid: { display: false }
                             }
                         },
                         plugins: { legend: { display: false } }
