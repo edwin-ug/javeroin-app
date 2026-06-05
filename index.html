@@ -192,13 +192,40 @@
             margin: 0 auto;
         }
 
+        /* --- SWIPE TO DELETE STYLES --- */
+        .swipe-container {
+            position: relative;
+            margin-bottom: 10px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            background: #ef4444; /* Red background for delete */
+        }
+
+        .delete-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 0;
+        }
+
         .voucher-card {
             background: white;
-            border-radius: 12px;
-            margin-bottom: 10px;
             display: flex;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 1;
+            transition: transform 0.2s ease-out;
+            width: 100%;
+            height: 100%;
         }
 
         .color-strip {
@@ -591,6 +618,16 @@
             const thisMonth = now.getMonth();
             const thisYear = now.getFullYear();
 
+            // --- BILLING CYCLE LOGIC (20th to 19th) ---
+            let periodStartMs, periodEndMs;
+            if (now.getDate() >= 20) {
+                periodStartMs = new Date(now.getFullYear(), now.getMonth(), 20, 0, 0, 0).getTime();
+                periodEndMs = new Date(now.getFullYear(), now.getMonth() + 1, 19, 23, 59, 59).getTime();
+            } else {
+                periodStartMs = new Date(now.getFullYear(), now.getMonth() - 1, 20, 0, 0, 0).getTime();
+                periodEndMs = new Date(now.getFullYear(), now.getMonth(), 19, 23, 59, 59).getTime();
+            }
+
             masterData.forEach((v) => {
                 if (!v || !v.code) return;
 
@@ -631,8 +668,9 @@
                         if (!monthlyDataMap[monthKey]) monthlyDataMap[monthKey] = 0;
                         monthlyDataMap[monthKey] += amount;
 
-                        // Monthly total = current calendar month
-                        if (saleDate.getMonth() === thisMonth && saleDate.getFullYear() === thisYear) {
+                        // Monthly total = Custom billing cycle (20th to 19th)
+                        const saleMs = saleDate.getTime();
+                        if (saleMs >= periodStartMs && saleMs <= periodEndMs) {
                             monthlySales += amount;
                             monthlyCount++;
                         }
@@ -800,20 +838,25 @@
 
         function createCardHtml(v, isSold) {
             return `
-            <div class="voucher-card ${isSold ? 'is-printed' : ''}">
-                <div class="color-strip" style="background: ${getPlanColor(v.plan)}"></div>
-                <div class="card-content">
-                    <div class="voucher-code">${v.code}</div>
-                    <div class="voucher-details">
-                        <span>${v.plan}</span><span class="price-badge">${parseInt(v.amount).toLocaleString()} UGX</span>
-                    </div>
-                    ${v.soldAt ? `<div class="sold-time">Sold: ${v.soldAt}</div>` : ''}
+            <div class="swipe-container" data-key="${v.firebaseKey}" data-code="${v.code}">
+                <div class="delete-bg">
+                    <span>DELETE</span>
                 </div>
-                <div style="width: 60px; display:flex; align-items:center; justify-content:center; border-left: 1px dashed #eee;">
-                    <button style="background:none; border:none; cursor:pointer;" 
-                        onclick="handlePrint('${v.firebaseKey}', '${v.code}', '${v.plan}', '${v.amount}', ${isSold}, '${v.soldAt || ""}')">
-                        <img src="invoice.png" style="width:28px;" onerror="this.src='printer.png'">
-                    </button>
+                <div class="voucher-card ${isSold ? 'is-printed' : ''}">
+                    <div class="color-strip" style="background: ${getPlanColor(v.plan)}"></div>
+                    <div class="card-content">
+                        <div class="voucher-code">${v.code}</div>
+                        <div class="voucher-details">
+                            <span>${v.plan}</span><span class="price-badge">${parseInt(v.amount).toLocaleString()} UGX</span>
+                        </div>
+                        ${v.soldAt ? `<div class="sold-time">Sold: ${v.soldAt}</div>` : ''}
+                    </div>
+                    <div style="width: 60px; display:flex; align-items:center; justify-content:center; border-left: 1px dashed #eee;">
+                        <button style="background:none; border:none; cursor:pointer;" 
+                            onclick="handlePrint('${v.firebaseKey}', '${v.code}', '${v.plan}', '${v.amount}', ${isSold}, '${v.soldAt || ""}')">
+                            <img src="invoice.png" style="width:28px;" onerror="this.src='printer.png'">
+                        </button>
+                    </div>
                 </div>
             </div>`;
         }
@@ -880,7 +923,7 @@
 
         function filterList(listId, val) {
             const search = val.toUpperCase();
-            const cards = document.getElementById(listId).getElementsByClassName('voucher-card');
+            const cards = document.getElementById(listId).getElementsByClassName('swipe-container');
             for (let card of cards) {
                 const code = card.querySelector('.voucher-code').innerText;
                 card.style.display = code.includes(search) ? "" : "none";
@@ -890,6 +933,71 @@
         function downloadReport() {
             alert("Report feature available! (Requires data reprocessing)");
         }
+
+        // --- SWIPE TO DELETE LOGIC ---
+        let startX = 0;
+        let currentX = 0;
+        let swipedCard = null;
+        let isSwiping = false;
+
+        document.addEventListener('touchstart', (e) => {
+            const target = e.target.closest('.voucher-card');
+            if (!target) return;
+            
+            // Only allow swiping in Store and History pages, not Past Sales
+            const swipeContainer = target.closest('.swipe-container');
+            if (swipeContainer && (document.getElementById('storeList').contains(swipeContainer) || document.getElementById('historyList').contains(swipeContainer))) {
+                swipedCard = target;
+                startX = e.touches[0].clientX;
+                isSwiping = true;
+                swipedCard.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isSwiping || !swipedCard) return;
+            currentX = e.touches[0].clientX;
+            let diff = currentX - startX;
+
+            // Only allow swiping left
+            if (diff < 0) {
+                swipedCard.style.transform = `translateX(${diff}px)`;
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', (e) => {
+            if (!isSwiping || !swipedCard) return;
+            isSwiping = false;
+            
+            let diff = currentX - startX;
+            const swipeContainer = swipedCard.closest('.swipe-container');
+            const key = swipeContainer.getAttribute('data-key');
+            const code = swipeContainer.getAttribute('data-code');
+
+            swipedCard.style.transition = 'transform 0.2s ease-out';
+            
+            // Threshold for delete action
+            if (diff < -80) {
+                swipedCard.style.transform = `translateX(-100%)`;
+                
+                setTimeout(() => {
+                    if (confirm(`Are you sure you want to delete voucher ${code}?`)) {
+                        db.ref('vouchers/' + key).remove()
+                            .catch(err => {
+                                alert("Failed to delete: " + err.message);
+                                swipedCard.style.transform = `translateX(0)`;
+                            });
+                    } else {
+                        swipedCard.style.transform = `translateX(0)`;
+                    }
+                }, 200);
+            } else {
+                swipedCard.style.transform = `translateX(0)`;
+            }
+            
+            swipedCard = null;
+        });
+
     </script>
 </body>
 </html>
